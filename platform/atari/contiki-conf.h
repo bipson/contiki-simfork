@@ -30,7 +30,6 @@
  * 
  * Author: Oliver Schmidt <ol.sc@web.de>
  *
- * $Id: contiki-conf.h,v 1.5 2010/11/01 19:44:34 oliverschmidt Exp $
  */
 
 #ifndef __CONTIKI_CONF_H__
@@ -39,9 +38,9 @@
 #include "6502def.h"
 
 #define CTK_CONF_MENU_KEY         CH_ESC
-#define CTK_CONF_WINDOWSWITCH_KEY 0x17	/* Ctrl-W */
-#define CTK_CONF_WIDGETUP_KEY     0x01	/* Ctrl-A */
-#define CTK_CONF_WIDGETDOWN_KEY   '\t'	/* Tab or Ctrl-I */
+#define CTK_CONF_WINDOWSWITCH_KEY 0x17  /* Ctrl-W */
+#define CTK_CONF_WIDGETUP_KEY     0x01  /* Ctrl-A */
+#define CTK_CONF_WIDGETDOWN_KEY   '\t'  /* Tab or Ctrl-I */
 
 #define textcolor(color) COLOR_WHITE
 
