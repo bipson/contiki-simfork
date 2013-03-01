@@ -51,4 +51,8 @@
 #define WEBSERVER_CONF_CFS_CONNS 2
 #endif
 
+/* taken from z1-wiki - should disable RDC */
+#undef NETSTACK_CONF_RDC
+#define NETSTACK_CONF_RDC	nullrdc_driver
+
 #endif /* __PROJECT_ROUTER_CONF_H__ */
