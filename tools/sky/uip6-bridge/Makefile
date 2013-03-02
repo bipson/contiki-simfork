@@ -1,40 +1,50 @@
-ifdef CONTIKI_HOME
-CONTIKI = $(CONTIKI_HOME)
-else
-ifndef CONTIKI
+CONTIKI_PROJECT=uip6-bridge-tap
+all: $(CONTIKI_PROJECT) 
+
 CONTIKI=../../..
-endif
-endif
 
-DEFINES=WITH_UIP6=1,WITH_SLIP=1,PROJECT_CONF_H=\"bridge-conf.h\"
+WITH_UIP6=1
 UIP_CONF_IPV6=1
+CFLAGS+= -DUIP_CONF_IPV6_RPL
 
-ifndef TARGET
-TARGET=sky
+#linker optimizations
+SMALL=1
+
+CFLAGS += -DPROJECT_CONF_H=\"project-conf.h\"
+PROJECT_SOURCEFILES += slip-bridge.c
+
+#Simple built-in webserver is the default.
+#Override with make WITH_WEBSERVER=0 for no webserver.
+#WITH_WEBSERVER=webserver-name will use /apps/webserver-name if it can be
+#found in the /apps, /platform/$(TARGET)/apps/, or current directory (in that order).
+# WITH_WEBSERVER=webserver for /apps/webserver
+# WITH_WEBSERVER=raven-webserver for /platform/avr-raven/apps/raven-webserver/
+#make clean before changing webservers!
+
+#Note /apps/webserver contains a 2500 byte style sheet which is a severe test
+#of the slip connection. Large MSS together with low baud rates without flow
+#control will overrun the transmit buffer when the style sheet is requested.
+
+WITH_WEBSERVER=0
+ifeq ($(WITH_WEBSERVER),1)
+CFLAGS += -DWEBSERVER=1
+PROJECT_SOURCEFILES += httpd-simple.c
+else ifneq ($(WITH_WEBSERVER), 0)
+APPS += $(WITH_WEBSERVER)
+CFLAGS += -DWEBSERVER=2
 endif
 
-PROJECTDIRS = dev
-PROJECT_SOURCEFILES = fakeuip.c sicslow_ethernet.c
-
-all:	uip6-bridge-tap.sky
-
-upload: uip6-bridge-tap.ihex
-	cp $< $(IHEXFILE)
-	$(MAKE) sky-u.$(subst /,-,$(word $(MOTE), $(MOTES)))
+ifeq ($(PREFIX),)
+ PREFIX = aaaa::1/64
+endif
 
 include $(CONTIKI)/Makefile.include
 
-../../tapslip6: ../../tapslip6.c
-	(cd ../../; $(MAKE) tapslip6)
+$(CONTIKI)/tools/tapslip6:	$(CONTIKI)/tools/tapslip6.c
+	(cd $(CONTIKI)/tools && $(MAKE) tapslip6)
 
-ifndef MOTE
-MOTE=1
-endif
+connect-router:	$(CONTIKI)/tools/tapslip6
+	sudo $(CONTIKI)/tools/tapslip6 $(PREFIX)
 
-connect: ../../tapslip6
-	sudo ../../tapslip6 -t tap0 -s $(USBDEVPREFIX)$(word $(MOTE), $(CMOTES)) 127.0.0.1 255.0.0.0
-
-bridge:
-	@sudo service radvd restart || echo radvd could not be restarted
-	sudo route add -6 aaaa::/64 tap0
-	sudo ip -6 address add aaaa::1/64 dev tap0
+connect-router-cooja:	$(CONTIKI)/tools/tunslip6
+	sudo $(CONTIKI)/tools/tunslip6 -a 127.0.0.1 $(PREFIX)

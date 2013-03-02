@@ -222,8 +222,13 @@ main(int argc, char **argv)
   /* If no MAC address was burned, we use the node ID. */
   if(!(node_mac[0] | node_mac[1] | node_mac[2] | node_mac[3] |
        node_mac[4] | node_mac[5] | node_mac[6] | node_mac[7])) {
+    /* replaced for lab-environment */
+    #if 0
     node_mac[0] = 0xc1;  /* Hardcoded for Z1 */
     node_mac[1] = 0x0c;  /* Hardcoded for Revision C */
+    #endif
+    node_mac[0] = 0x00;
+    node_mac[1] = 0x02;     
     node_mac[2] = 0x00;  /* Hardcoded to arbitrary even number so that
                             the 802.15.4 MAC address is compatible with
                             an Ethernet MAC address - byte 0 (byte 2 in
@@ -238,8 +243,13 @@ main(int argc, char **argv)
   /* Overwrite node MAC if desired at compile time */
 #ifdef MACID
   #warning "***** CHANGING DEFAULT MAC *****"
+  /* replaced for lab-environment */
+  #if 0
   node_mac[0] = 0xc1;  /* Hardcoded for Z1 */
   node_mac[1] = 0x0c;  /* Hardcoded for Revision C */
+  #endif
+  node_mac[0] = 0x00;  
+  node_mac[1] = 0x02;  
   node_mac[2] = 0x00;  /* Hardcoded to arbitrary even number so that
                           the 802.15.4 MAC address is compatible with
                           an Ethernet MAC address - byte 0 (byte 2 in
