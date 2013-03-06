@@ -26,7 +26,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: project-conf.h,v 1.1 2010/10/21 18:23:44 joxe Exp $
  */
 
 #ifndef __PROJECT_ROUTER_CONF_H__
@@ -51,5 +50,9 @@
 #ifndef WEBSERVER_CONF_CFS_CONNS
 #define WEBSERVER_CONF_CFS_CONNS 2
 #endif
+
+/* taken from z1-wiki - should disable RDC */
+#undef NETSTACK_CONF_RDC
+#define NETSTACK_CONF_RDC	nullrdc_driver
 
 #endif /* __PROJECT_ROUTER_CONF_H__ */
