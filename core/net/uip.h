@@ -2068,7 +2068,7 @@ CCIF extern uip_lladdr_t uip_lladdr;
   ((((a)->u8[8])  == (((m)->addr[0]) ^ 0x02)) &&   \
   */
 #define uip_is_addr_mac_addr_based(a, m) \
-  ((((a)->u8[8])  == ((m)->addr[0]) &&   \
+  ((((a)->u8[8])  == (m)->addr[0]) &&   \
    (((a)->u8[9])  == (m)->addr[1]) &&            \
    (((a)->u8[10]) == (m)->addr[2]) &&   \
    (((a)->u8[11]) == (m)->addr[3]) &&            \
