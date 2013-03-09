@@ -50,7 +50,7 @@
 
 /* Define which resources to include to meet memory constraints. */
 #define REST_RES_TEMP 1
-#define REST_RES_HELLO 1
+#define REST_RES_HELLO 0
 #define REST_RES_MIRROR 0 /* causes largest code size */
 #define REST_RES_CHUNKS 0
 #define REST_RES_SEPARATE 0
@@ -58,10 +58,10 @@
 #define REST_RES_EVENT 0
 #define REST_RES_SUB 0
 #define REST_RES_LEDS 0
-#define REST_RES_TOGGLE 1
+#define REST_RES_TOGGLE 0
 #define REST_RES_LIGHT 0
 #define REST_RES_BATTERY 1
-#define REST_RES_RADIO 1
+#define REST_RES_RADIO 0
 
 
 
@@ -136,18 +136,44 @@ temp_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_
   size_t sz;
   char *pos;
   char *message;
-  const char *xml1 = "<obj href=\"http://myhome/temp\">\n\
-    <real name=\"temp\" units=\"obix:units/celsius\" val=\"";
-  const char *xml2 = "\">\n</obj>";
 
-  const char *len = NULL;
+  const char *msgp1, *msgp2;
 
-  /* we will now get the current temperature reading */
   int16_t  tempint;
   uint16_t tempfrac;
   int16_t  raw;
   uint16_t absraw;
   int16_t  sign = 1;
+
+  const uint16_t *accept = NULL;
+  
+  int num = REST.get_header_accept(request, &accept);
+  if (num && accept[0]==REST.type.APPLICATION_XML)
+  {
+    REST.set_header_content_type(response, REST.type.APPLICATION_XML);
+    msgp1 = "<obj href=\"http://myhome/temp\">\n\
+      <real name=\"temp\" units=\"obix:units/celsius\" val=\"";
+    msgp2 = "\">\n</obj>";
+
+  }
+  else if (num && accept[0]==REST.type.APPLICATION_EXI)
+  {
+    REST.set_header_content_type(response, REST.type.APPLICATION_EXI);
+    msgp1 = ""
+    msgp1 = "\xA0\x00\x40\xF2\xE0\x01\x04\x6F\x62\x6A\x01\x01\x05\x68\x72\x65\x66\x14\x68\x74\x74\x70\x3A\x2F\x2F\x6D\x79\x68\x6F\x6D\x65\x2F\x74\x65\x6D\x70\x01\x03\x01\x05\x72\x65\x61\x6C\x01\x01\x05\x6E\x61\x6D\x65\x06\x74\x65\x6D\x70\x01\x01\x01\x06\x75\x6E\x69\x74\x73\x14\x6F\x62\x69\x78\x3A\x75\x6E\x69\x74\x73\x2F\x63\x65\x6C\x73\x69\x75\x73\x02\x01\x01\x04\x76\x61\x6C\x06";
+    msgp2 = "\x03\x00\x00";
+
+  }
+  else
+  {
+    REST.set_response_status(response, REST.status.UNSUPPORTED_MADIA_TYPE);
+    message = "Supporting content-types application/xml and application/exi";
+
+    REST.set_response_payload(response, message, strlen(message));
+    return;
+  }
+
+  const char *len = NULL;
 
   /* Check the offset for boundaries of the resource data. */
   if (*offset>=CHUNKS_TOTAL)
@@ -155,18 +181,21 @@ temp_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_
     REST.set_response_status(response, REST.status.BAD_OPTION);
     /* A block error message should not exceed the minimum block size (16). */
 
-    const char *error_msg = "BlockOutOfScope";
-    REST.set_response_payload(response, error_msg, strlen(error_msg));
+    message = "BlockOutOfScope";
+    REST.set_response_payload(response, message, strlen(message));
     return;
   }
 
-  if (*offset <= 0) {
+  if (*offset <= 0)
+  {
     raw = tmp102_read_temp_raw();  // Reading from the sensor
 
     /* TODO: de-init the temp-sensor again? */
 
     absraw = raw;
-    if (raw < 0) { // Perform 2C's if sensor returned negative data
+    if (raw < 0)
+    {
+      // Perform 2C's if sensor returned negative data
       absraw = (raw ^ 0xFFFF) + 1;
       sign = -1;
     }
@@ -175,15 +204,20 @@ temp_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_
     /* minus = ((tempint == 0) & (sign == -1)) ? '-'  : ' ' ; */
     
     sz = snprintf(NULL, 0, "%d.%04d", tempint, tempfrac);
-    if (sign == -1) {
-      if ((tempstring = malloc(sz + 2)) == NULL) {
+    if (sign == -1)
+    {
+      if ((tempstring = malloc(sz + 2)) == NULL)
+      {
         printf("ERROR while allocating!\n");
         return;
       }
       tempstring[0] = '-';
       pos = tempstring + 1;
-    } else {
-      if ((tempstring = malloc(sz + 1)) == NULL) {
+    }
+    else
+    {
+      if ((tempstring = malloc(sz + 1)) == NULL)
+      {
         printf("ERROR while allocating!\n");
         return;
       }
@@ -194,16 +228,17 @@ temp_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_
   }
 
   /* Some data that has the length up to REST_MAX_CHUNK_SIZE. For more, see the chunk resource. */
-  message = malloc(strlen(xml1) + strlen(xml2) + strlen (tempstring));
+  message = malloc(strlen(msgp1) + strlen(msgp2) + strlen (tempstring));
   message[0] = '\0';
-  strcat(message, xml1);
+  strcat(message, msgp1);
   strcat(message, tempstring);
-  strcat(message, xml2);
+  strcat(message, msgp2);
   
   int length = (strlen(message)) - *offset;
 
   /* The query string can be retrieved by rest_get_query() or parsed for its key-value pairs. */
-  if (REST.get_query_variable(request, "len", &len)) {
+  if (REST.get_query_variable(request, "len", &len))
+  {
     length = atoi(len);
     if (length<0) length = 0;
   }
@@ -230,9 +265,6 @@ temp_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_
     *offset = -1;
   }
 
-
-
-  REST.set_header_content_type(response, REST.type.TEXT_PLAIN); /* text/plain is the default, hence this option could be omitted. */
   REST.set_header_etag(response, (uint8_t *) &length, 1);
   REST.set_response_payload(response, buffer, length);
 
