@@ -122,7 +122,8 @@
  * Signature: resource name, the RESTful methods it handles, and its URI path (omitting the leading slash).
  */
 RESOURCE(temp, METHOD_GET, "temp", "title=\"Hello temp: ?len=0..\";rt=\"Text\"");
-char *tempstring;
+/* we save the message as global variable, so it is retained through multiple calls (chunked resource) */
+char *message;
 
 /*
  * A handler function named [resource name]_handler must be implemented for each RESOURCE.
@@ -135,7 +136,7 @@ temp_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_
 {
   size_t sz;
   char *pos;
-  char *message;
+  char *tempstring;
 
   const char *msgp1, *msgp2;
 
@@ -151,16 +152,15 @@ temp_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_
   if (num && accept[0]==REST.type.APPLICATION_XML)
   {
     REST.set_header_content_type(response, REST.type.APPLICATION_XML);
-    msgp1 = "<obj href=\"http://myhome/temp\">\n\
-      <real name=\"temp\" units=\"obix:units/celsius\" val=\"";
-    msgp2 = "\">\n</obj>";
+    msgp1 = "<obj href=\"http://myhome/temp\">\n\t<real name=\"temp\" units=\"obix:units/celsius\" val=\"\0";
+    msgp2 = "\"/>\n</obj>\0";
 
   }
   else if (num && accept[0]==REST.type.APPLICATION_EXI)
   {
     REST.set_header_content_type(response, REST.type.APPLICATION_EXI);
-    msgp1 = "\xA0\x00\x40\xF2\xE0\x01\x04\x6F\x62\x6A\x01\x01\x05\x68\x72\x65\x66\x14\x68\x74\x74\x70\x3A\x2F\x2F\x6D\x79\x68\x6F\x6D\x65\x2F\x74\x65\x6D\x70\x01\x03\x01\x05\x72\x65\x61\x6C\x01\x01\x05\x6E\x61\x6D\x65\x06\x74\x65\x6D\x70\x01\x01\x01\x06\x75\x6E\x69\x74\x73\x14\x6F\x62\x69\x78\x3A\x75\x6E\x69\x74\x73\x2F\x63\x65\x6C\x73\x69\x75\x73\x02\x01\x01\x04\x76\x61\x6C\x06";
-    msgp2 = "\x03\x00\x00";
+    msgp1 = "\xA0\x00\x40\xF2\xE0\x01\x04\x6F\x62\x6A\x01\x01\x05\x68\x72\x65\x66\x14\x68\x74\x74\x70\x3A\x2F\x2F\x6D\x79\x68\x6F\x6D\x65\x2F\x74\x65\x6D\x70\x01\x03\x01\x05\x72\x65\x61\x6C\x01\x01\x05\x6E\x61\x6D\x65\x06\x74\x65\x6D\x70\x01\x01\x01\x06\x75\x6E\x69\x74\x73\x14\x6F\x62\x69\x78\x3A\x75\x6E\x69\x74\x73\x2F\x63\x65\x6C\x73\x69\x75\x73\x02\x01\x01\x04\x76\x61\x6C\x06\0";
+    msgp2 = "\x03\x00\x00\0";
 
   }
   else
@@ -185,11 +185,10 @@ temp_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_
     return;
   }
 
+  /* compute message once */
   if (*offset <= 0)
   {
     raw = tmp102_read_temp_raw();  // Reading from the sensor
-
-    /* TODO: de-init the temp-sensor again? */
 
     absraw = raw;
     if (raw < 0)
@@ -200,7 +199,6 @@ temp_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_
     }
     tempint  = (absraw >> 8) * sign;
     tempfrac = ((absraw>>4) % 16) * 625; // Info in 1/10000 of degree
-    /* minus = ((tempint == 0) & (sign == -1)) ? '-'  : ' ' ; */
     
     sz = snprintf(NULL, 0, "%d.%04d", tempint, tempfrac);
     if (sign == -1)
@@ -224,14 +222,14 @@ temp_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_
     }
     
     snprintf(pos, sz + 1, "%d.%04d", tempint, tempfrac);
-  }
 
-  /* Some data that has the length up to REST_MAX_CHUNK_SIZE. For more, see the chunk resource. */
-  message = malloc(strlen(msgp1) + strlen(msgp2) + strlen (tempstring));
-  message[0] = '\0';
-  strcat(message, msgp1);
-  strcat(message, tempstring);
-  strcat(message, msgp2);
+    /* Some data that has the length up to REST_MAX_CHUNK_SIZE. For more, see the chunk resource. */
+    /* we assume null-appended strings behind msgp1&2 and tempstring */
+    message = malloc(strlen(msgp1) + strlen(msgp2) + strlen(tempstring));
+    memcpy(message, msgp1, strlen(msgp1));
+    memcpy(message+strlen(msgp1), tempstring, strlen(tempstring));
+    memcpy(message+strlen(msgp1)+strlen(tempstring), msgp2, strlen(msgp2) + 1);
+  }
   
   int length = (strlen(message)) - *offset;
 
