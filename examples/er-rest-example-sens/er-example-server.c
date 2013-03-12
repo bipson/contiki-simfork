@@ -124,6 +124,7 @@
 RESOURCE(temp, METHOD_GET, "temp", "title=\"Hello temp: ?len=0..\";rt=\"Text\"");
 /* we save the message as global variable, so it is retained through multiple calls (chunked resource) */
 char *message;
+int size_msg;
 
 /*
  * A handler function named [resource name]_handler must be implemented for each RESOURCE.
@@ -137,7 +138,7 @@ temp_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_
   size_t sz;
   char *pos;
   char *tempstring;
-
+  int size_msgp1, size_msgp2;
   const char *msgp1, *msgp2;
 
   int16_t  tempint;
@@ -147,30 +148,7 @@ temp_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_
   int16_t  sign = 1;
 
   const uint16_t *accept = NULL;
-  
-  int num = REST.get_header_accept(request, &accept);
-  if (num && accept[0]==REST.type.APPLICATION_XML)
-  {
-    REST.set_header_content_type(response, REST.type.APPLICATION_XML);
-    msgp1 = "<obj href=\"http://myhome/temp\">\n\t<real name=\"temp\" units=\"obix:units/celsius\" val=\"\0";
-    msgp2 = "\"/>\n</obj>\0";
-
-  }
-  else if (num && accept[0]==REST.type.APPLICATION_EXI)
-  {
-    REST.set_header_content_type(response, REST.type.APPLICATION_EXI);
-    msgp1 = "\xA0\x00\x40\xF2\xE0\x01\x04\x6F\x62\x6A\x01\x01\x05\x68\x72\x65\x66\x14\x68\x74\x74\x70\x3A\x2F\x2F\x6D\x79\x68\x6F\x6D\x65\x2F\x74\x65\x6D\x70\x01\x03\x01\x05\x72\x65\x61\x6C\x01\x01\x05\x6E\x61\x6D\x65\x06\x74\x65\x6D\x70\x01\x01\x01\x06\x75\x6E\x69\x74\x73\x14\x6F\x62\x69\x78\x3A\x75\x6E\x69\x74\x73\x2F\x63\x65\x6C\x73\x69\x75\x73\x02\x01\x01\x04\x76\x61\x6C\x06\0";
-    msgp2 = "\x03\x00\x00\0";
-
-  }
-  else
-  {
-    REST.set_response_status(response, REST.status.UNSUPPORTED_MADIA_TYPE);
-    message = "Supporting content-types application/xml and application/exi";
-
-    REST.set_response_payload(response, message, strlen(message));
-    return;
-  }
+  int num = 0, length = 0;
 
   const char *len = NULL;
 
@@ -179,7 +157,6 @@ temp_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_
   {
     REST.set_response_status(response, REST.status.BAD_OPTION);
     /* A block error message should not exceed the minimum block size (16). */
-
     message = "BlockOutOfScope";
     REST.set_response_payload(response, message, strlen(message));
     return;
@@ -188,7 +165,38 @@ temp_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_
   /* compute message once */
   if (*offset <= 0)
   {
-    raw = tmp102_read_temp_raw();  // Reading from the sensor
+    /* decide upon content-format */
+    num = REST.get_header_accept(request, &accept);
+    if (num && accept[0]==REST.type.APPLICATION_XML)
+    {
+      REST.set_header_content_type(response, REST.type.APPLICATION_XML);
+      msgp1 = "<obj href=\"http://myhome/temp\">\n\t<real name=\"temp\" units=\"obix:units/celsius\" val=\"";
+      msgp2 = "\"/>\n</obj>\0";
+      /* hardcoded length, ugly but faster and necc. for exi-answer */
+      size_msgp1 = 83;
+      size_msgp2 = 10;
+    }
+    else if (num && accept[0]==REST.type.APPLICATION_EXI)
+    {
+      REST.set_header_content_type(response, REST.type.APPLICATION_EXI);
+      msgp1 = "\x80\x10\x01\x04\x6F\x62\x6A\x01\x01\x00\x02\x14\x68\x74\x74\x70\x3A\x2F\x2F\x6D\x79\x68\x6F\x6D\x65\x2F\x74\x65\x6D\x70\x01\x02\x01\x05\x72\x65\x61\x6C\x01\x01\x00\x08\x06\x74\x65\x6D\x70\x01\x01\x01\x06\x75\x6E\x69\x74\x73\x14\x6F\x62\x69\x78\x3A\x75\x6E\x69\x74\x73\x2F\x63\x65\x6C\x73\x69\x75\x73\x02\x01\x01\x00\x11\x09";
+      msgp2 = "\x03\x00\x00\0";
+      /* hardcoded length, ugly but faster and necc. for exi-answer */
+      size_msgp1 = 81;
+      size_msgp2 = 3;
+    }
+    else
+    {
+      REST.set_header_content_type(response, REST.type.TEXT_PLAIN);
+      REST.set_response_status(response, REST.status.UNSUPPORTED_MADIA_TYPE);
+      message = "Supporting content-types application/xml and application/exi";
+
+      REST.set_response_payload(response, message, strlen(message));
+      return;
+    }
+
+    /* get temperature */
+    raw = tmp102_read_temp_raw();
 
     absraw = raw;
     if (raw < 0)
@@ -205,7 +213,10 @@ temp_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_
     {
       if ((tempstring = malloc(sz + 2)) == NULL)
       {
-        printf("ERROR while allocating!\n");
+        PRINTF("ERROR while allocating!\n");
+        REST.set_response_status(response, REST.status.INTERNAL_SERVER_ERROR);
+        message = "Memory allocation not possible!";
+        REST.set_response_payload(response, message, strlen(message));
         return;
       }
       tempstring[0] = '-';
@@ -215,7 +226,10 @@ temp_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_
     {
       if ((tempstring = malloc(sz + 1)) == NULL)
       {
-        printf("ERROR while allocating!\n");
+        PRINTF("ERROR while allocating!\n");
+        REST.set_response_status(response, REST.status.INTERNAL_SERVER_ERROR);
+        message = "Memory allocation not possible!";
+        REST.set_response_payload(response, message, strlen(message));
         return;
       }
       pos = tempstring;
@@ -224,14 +238,31 @@ temp_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_
     snprintf(pos, sz + 1, "%d.%04d", tempint, tempfrac);
 
     /* Some data that has the length up to REST_MAX_CHUNK_SIZE. For more, see the chunk resource. */
-    /* we assume null-appended strings behind msgp1&2 and tempstring */
-    message = malloc(strlen(msgp1) + strlen(msgp2) + strlen(tempstring));
-    memcpy(message, msgp1, strlen(msgp1));
-    memcpy(message+strlen(msgp1), tempstring, strlen(tempstring));
-    memcpy(message+strlen(msgp1)+strlen(tempstring), msgp2, strlen(msgp2) + 1);
+    /* we assume null-appended strings behind msgp2 and tempstring */
+    size_msg = size_msgp1 + size_msgp2 + strlen(tempstring);
+    if ((message = malloc(size_msg)) == NULL)
+    {
+      PRINTF("ERROR while allocationg!\n");
+      REST.set_response_status(response, REST.status.INTERNAL_SERVER_ERROR);
+      message = "Memory allocation not possible!";
+      REST.set_response_payload(response, message, strlen(message));
+      return;
+    }
+    memcpy(message, msgp1, size_msgp1);
+    memcpy(message + size_msgp1, tempstring, strlen(tempstring));
+    memcpy(message + size_msgp1 + strlen(tempstring), msgp2, size_msgp2 + 1);
   }
   
-  int length = (strlen(message)) - *offset;
+  length = size_msg - *offset;
+
+  if (length <= 0)
+  {
+    PRINTF("AHOYHOY?!\n");
+    REST.set_response_status(response, REST.status.INTERNAL_SERVER_ERROR);
+    message = "calculation of message length error, this should not happen :\\";
+    REST.set_response_payload(response, message, strlen(message));
+    return;
+  }
 
   /* The query string can be retrieved by rest_get_query() or parsed for its key-value pairs. */
   if (REST.get_query_variable(request, "len", &len))
