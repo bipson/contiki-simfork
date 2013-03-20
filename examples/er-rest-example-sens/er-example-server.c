@@ -44,10 +44,6 @@
 #include "contiki.h"
 #include "contiki-net.h"
 
-/* for temperature sensor */
-#include "dev/i2cmaster.h"
-#include "dev/tmp102.h"
-
 /* Define which resources to include to meet memory constraints. */
 #define REST_RES_TEMP 1
 #define REST_RES_HELLO 0
@@ -63,35 +59,15 @@
 #define REST_RES_BATTERY 1
 #define REST_RES_RADIO 0
 
-
-
-#if !UIP_CONF_IPV6_RPL && !defined (CONTIKI_TARGET_MINIMAL_NET) && !defined (CONTIKI_TARGET_NATIVE)
-#warning "Compiling with static routing!"
-#include "static-routing.h"
-#endif
-
 #include "erbium.h"
 
+/* for temperature sensor */
+#include "dev/i2cmaster.h"
+#include "dev/tmp102.h"
 
-#if defined (PLATFORM_HAS_BUTTON)
-#include "dev/button-sensor.h"
-#endif
-#if defined (PLATFORM_HAS_LEDS)
-#include "dev/leds.h"
-#endif
-#if defined (PLATFORM_HAS_LIGHT)
-#include "dev/light-sensor.h"
-#endif
 #if defined (PLATFORM_HAS_BATTERY)
 #include "dev/battery-sensor.h"
 #endif
-#if defined (PLATFORM_HAS_SHT11)
-#include "dev/sht11-sensor.h"
-#endif
-#if defined (PLATFORM_HAS_RADIO)
-#include "dev/radio-sensor.h"
-#endif
-
 
 /* For CoAP-specific example: not required for normal RESTful Web service. */
 #if WITH_COAP == 3
@@ -113,18 +89,114 @@
 #define PRINTLLADDR(addr)
 #endif
 
+#define TEMP_MSG_MAX_SIZE 140 // more than enough right now
+#define TEMP_BUFF_MAX 7       // -234.6\0
+
+
+/******************************************************************************/
+/* globals ********************************************************************/
+/******************************************************************************/
+char tempstring[TEMP_BUFF_MAX];
+
+
+/******************************************************************************/
+/* helper functions ***********************************************************/
+/******************************************************************************/
+int temp_to_buff(char* buffer) {
+  int16_t  tempint;
+  uint16_t tempfrac;
+  int16_t  raw;
+  uint16_t absraw;
+  int16_t  sign = 1;
+
+  /* get temperature */
+  raw = tmp102_read_temp_raw();
+
+  absraw = raw;
+  if (raw < 0)
+  {
+    // Perform 2C's if sensor returned negative data
+    absraw = (raw ^ 0xFFFF) + 1;
+    sign = -1;
+  }
+  tempint  = (absraw >> 8) * sign;
+  tempfrac = ((absraw>>4) % 16) * 625; // Info in 1/10000 of degree
+  tempfrac = (tempfrac + 500 ) / 1000; // Round to 1 decimal
+
+  return snprintf(tempstring, TEMP_BUFF_MAX, "%d.%1d", tempint, tempfrac);
+}
+
+int temp_to_default_buff() {
+
+  return temp_to_buff(tempstring);
+
+}
+
+uint8_t create_response(int num, int accept, char *buffer)
+{
+  size_t size_temp;
+  int size_msgp1, size_msgp2;
+  const char *msgp1, *msgp2;
+  uint8_t size_msg;
+
+  if (num && accept==REST.type.APPLICATION_XML)
+  {
+    msgp1 = "<obj href=\"http://myhome/temp\">\n\t<real name=\"temp\" units=\"obix:units/celsius\" val=\"";
+    msgp2 = "\"/>\n</obj>\0";
+    /* hardcoded length, ugly but faster and necc. for exi-answer */
+    size_msgp1 = 83;
+    size_msgp2 = 10;
+  }
+  else if (num && accept==REST.type.APPLICATION_EXI)
+  {
+    msgp1 = "\x80\x10\x01\x04\x6F\x62\x6A\x01\x01\x00\x02\x14\x68\x74\x74\x70\x3A\x2F\x2F\x6D\x79\x68\x6F\x6D\x65\x2F\x74\x65\x6D\x70\x01\x02\x01\x05\x72\x65\x61\x6C\x01\x01\x00\x08\x06\x74\x65\x6D\x70\x01\x01\x01\x06\x75\x6E\x69\x74\x73\x14\x6F\x62\x69\x78\x3A\x75\x6E\x69\x74\x73\x2F\x63\x65\x6C\x73\x69\x75\x73\x02\x01\x01\x00\x11\x09";
+    msgp2 = "\x03\x00\x00\0";
+    /* hardcoded length, ugly but faster and necc. for exi-answer */
+    size_msgp1 = 81;
+    size_msgp2 = 3;
+  }
+  else
+  {
+    PRINTF("Unsupported encoding!\n");
+    return -1;
+  }
+
+  if ((size_temp = temp_to_default_buff()) < 0 )
+  {
+    PRINTF("Error preparing temperature string!\n");
+    return -1;
+  }
+
+  /* Some data that has the length up to REST_MAX_CHUNK_SIZE. For more, see the chunk resource. */
+  /* we assume null-appended strings behind msgp2 and tempstring */
+  size_msg = size_msgp1 + size_msgp2 + size_temp + 1;
+
+  if (size_msg > TEMP_MSG_MAX_SIZE)
+  {
+    PRINTF("Message too big!\n");
+    return -1;
+  }
+
+  memcpy(buffer, msgp1, size_msgp1);
+  memcpy(buffer + size_msgp1, tempstring, size_temp);
+  memcpy(buffer + size_msgp1 + size_temp, msgp2, size_msgp2 + 1);
+
+  return size_msg;
+}
+
+
 /******************************************************************************/
 #if REST_RES_TEMP
 
-#define CHUNKS_TOTAL   1024 
+#define CHUNKS_TOTAL      1024 
 /*
  * Resources are defined by the RESOURCE macro.
  * Signature: resource name, the RESTful methods it handles, and its URI path (omitting the leading slash).
  */
 RESOURCE(temp, METHOD_GET, "temp", "title=\"Hello temp: ?len=0..\";rt=\"Text\"");
 /* we save the message as global variable, so it is retained through multiple calls (chunked resource) */
-char *message;
-int size_msg;
+char message[TEMP_MSG_MAX_SIZE];
+uint8_t size_msg;
 
 /*
  * A handler function named [resource name]_handler must be implemented for each RESOURCE.
@@ -135,17 +207,6 @@ int size_msg;
 void
 temp_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset)
 {
-  size_t sz;
-  char *pos;
-  char *tempstring;
-  int size_msgp1, size_msgp2;
-  const char *msgp1, *msgp2;
-
-  int16_t  tempint;
-  uint16_t tempfrac;
-  int16_t  raw;
-  uint16_t absraw;
-  int16_t  sign = 1;
 
   const uint16_t *accept = NULL;
   int num = 0, length = 0;
@@ -157,8 +218,7 @@ temp_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_
   {
     REST.set_response_status(response, REST.status.BAD_OPTION);
     /* A block error message should not exceed the minimum block size (16). */
-    message = "BlockOutOfScope";
-    REST.set_response_payload(response, message, strlen(message));
+    REST.set_response_payload(response, "BlockOutOfScope", strlen(message));
     return;
   }
 
@@ -167,90 +227,32 @@ temp_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_
   {
     /* decide upon content-format */
     num = REST.get_header_accept(request, &accept);
+
     if (num && accept[0]==REST.type.APPLICATION_XML)
     {
       REST.set_header_content_type(response, REST.type.APPLICATION_XML);
-      msgp1 = "<obj href=\"http://myhome/temp\">\n\t<real name=\"temp\" units=\"obix:units/celsius\" val=\"";
-      msgp2 = "\"/>\n</obj>\0";
-      /* hardcoded length, ugly but faster and necc. for exi-answer */
-      size_msgp1 = 83;
-      size_msgp2 = 10;
     }
     else if (num && accept[0]==REST.type.APPLICATION_EXI)
     {
       REST.set_header_content_type(response, REST.type.APPLICATION_EXI);
-      msgp1 = "\x80\x10\x01\x04\x6F\x62\x6A\x01\x01\x00\x02\x14\x68\x74\x74\x70\x3A\x2F\x2F\x6D\x79\x68\x6F\x6D\x65\x2F\x74\x65\x6D\x70\x01\x02\x01\x05\x72\x65\x61\x6C\x01\x01\x00\x08\x06\x74\x65\x6D\x70\x01\x01\x01\x06\x75\x6E\x69\x74\x73\x14\x6F\x62\x69\x78\x3A\x75\x6E\x69\x74\x73\x2F\x63\x65\x6C\x73\x69\x75\x73\x02\x01\x01\x00\x11\x09";
-      msgp2 = "\x03\x00\x00\0";
-      /* hardcoded length, ugly but faster and necc. for exi-answer */
-      size_msgp1 = 81;
-      size_msgp2 = 3;
     }
     else
     {
       REST.set_header_content_type(response, REST.type.TEXT_PLAIN);
       REST.set_response_status(response, REST.status.UNSUPPORTED_MADIA_TYPE);
-      message = "Supporting content-types application/xml and application/exi";
 
-      REST.set_response_payload(response, message, strlen(message));
+      REST.set_response_payload(response, "Supporting content-types application/xml and application/exi", strlen(message));
       return;
     }
 
-    /* get temperature */
-    raw = tmp102_read_temp_raw();
-
-    absraw = raw;
-    if (raw < 0)
+    if ((size_msg = create_response(num, accept[0], message)) <= 0)
     {
-      // Perform 2C's if sensor returned negative data
-      absraw = (raw ^ 0xFFFF) + 1;
-      sign = -1;
-    }
-    tempint  = (absraw >> 8) * sign;
-    tempfrac = ((absraw>>4) % 16) * 625; // Info in 1/10000 of degree
-    
-    sz = snprintf(NULL, 0, "%d.%04d", tempint, tempfrac);
-    if (sign == -1)
-    {
-      if ((tempstring = malloc(sz + 2)) == NULL)
-      {
-        PRINTF("ERROR while allocating!\n");
-        REST.set_response_status(response, REST.status.INTERNAL_SERVER_ERROR);
-        message = "Memory allocation not possible!";
-        REST.set_response_payload(response, message, strlen(message));
-        return;
-      }
-      tempstring[0] = '-';
-      pos = tempstring + 1;
-    }
-    else
-    {
-      if ((tempstring = malloc(sz + 1)) == NULL)
-      {
-        PRINTF("ERROR while allocating!\n");
-        REST.set_response_status(response, REST.status.INTERNAL_SERVER_ERROR);
-        message = "Memory allocation not possible!";
-        REST.set_response_payload(response, message, strlen(message));
-        return;
-      }
-      pos = tempstring;
-    }
-    
-    snprintf(pos, sz + 1, "%d.%04d", tempint, tempfrac);
-
-    /* Some data that has the length up to REST_MAX_CHUNK_SIZE. For more, see the chunk resource. */
-    /* we assume null-appended strings behind msgp2 and tempstring */
-    size_msg = size_msgp1 + size_msgp2 + strlen(tempstring);
-    if ((message = malloc(size_msg)) == NULL)
-    {
-      PRINTF("ERROR while allocationg!\n");
+      PRINTF("ERROR while creating message!\n");
       REST.set_response_status(response, REST.status.INTERNAL_SERVER_ERROR);
-      message = "Memory allocation not possible!";
-      REST.set_response_payload(response, message, strlen(message));
+      REST.set_response_payload(response, "ERROR while creating message :\\", strlen(message));
       return;
     }
-    memcpy(message, msgp1, size_msgp1);
-    memcpy(message + size_msgp1, tempstring, strlen(tempstring));
-    memcpy(message + size_msgp1 + strlen(tempstring), msgp2, size_msgp2 + 1);
+
   }
   
   length = size_msg - *offset;
@@ -259,8 +261,7 @@ temp_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_
   {
     PRINTF("AHOYHOY?!\n");
     REST.set_response_status(response, REST.status.INTERNAL_SERVER_ERROR);
-    message = "calculation of message length error, this should not happen :\\";
-    REST.set_response_payload(response, message, strlen(message));
+    REST.set_response_payload(response, "calculation of message length error, this should not happen :\\", strlen(message));
     return;
   }
 
@@ -287,7 +288,10 @@ temp_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_
     *offset += length;
 
     /* Signal end of resource representation. */
-    if (*offset>=CHUNKS_TOTAL) *offset = -1;
+    if (*offset>=CHUNKS_TOTAL)
+    {
+      *offset = -1;
+    }
   } else {
     memcpy(buffer, message + *offset, length);
     *offset = -1;
@@ -1091,19 +1095,6 @@ PROCESS_THREAD(rest_server_example, ev, data)
   /* Define application-specific events here. */
   while(1) {
     PROCESS_WAIT_EVENT();
-#if defined (PLATFORM_HAS_BUTTON)
-    if (ev == sensors_event && data == &button_sensor) {
-      PRINTF("BUTTON\n");
-#if REST_RES_EVENT
-      /* Call the event_handler for this application-specific event. */
-      event_event_handler(&resource_event);
-#endif
-#if REST_RES_SEPARATE && WITH_COAP>3
-      /* Also call the separate response example handler. */
-      separate_finalize_handler();
-#endif
-    }
-#endif /* PLATFORM_HAS_BUTTON */
   } /* while (1) */
 
   PROCESS_END();
