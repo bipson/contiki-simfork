@@ -226,14 +226,16 @@ main(int argc, char **argv)
     #if 0
     node_mac[0] = 0xc1;  /* Hardcoded for Z1 */
     node_mac[1] = 0x0c;  /* Hardcoded for Revision C */
-    #endif
-    node_mac[0] = 0x00;
-    node_mac[1] = 0x02;     
     node_mac[2] = 0x00;  /* Hardcoded to arbitrary even number so that
                             the 802.15.4 MAC address is compatible with
                             an Ethernet MAC address - byte 0 (byte 2 in
                             the DS ID) */
     node_mac[3] = 0x00;  /* Hardcoded */
+    #endif
+    node_mac[0] = 0x00;
+    node_mac[1] = 0x01;     
+    node_mac[2] = 0x00; 
+    node_mac[3] = 0x02;  /* Hardcoded */
     node_mac[4] = 0x00;  /* Hardcoded */
     node_mac[5] = 0x00;  /* Hardcoded */
     node_mac[6] = node_id >> 8;
@@ -247,14 +249,16 @@ main(int argc, char **argv)
   #if 0
   node_mac[0] = 0xc1;  /* Hardcoded for Z1 */
   node_mac[1] = 0x0c;  /* Hardcoded for Revision C */
-  #endif
-  node_mac[0] = 0x00;  
-  node_mac[1] = 0x02;  
   node_mac[2] = 0x00;  /* Hardcoded to arbitrary even number so that
-                          the 802.15.4 MAC address is compatible with
-                          an Ethernet MAC address - byte 0 (byte 2 in
-                          the DS ID) */
+			    the 802.15.4 MAC address is compatible with
+			    an Ethernet MAC address - byte 0 (byte 2 in
+			    the DS ID) */
   node_mac[3] = 0x00;  /* Hardcoded */
+  #endif
+  node_mac[0] = 0x00;
+  node_mac[1] = 0x00;     
+  node_mac[2] = 0x00; 
+  node_mac[3] = 0x02;  /* Hardcoded */
   node_mac[4] = 0x00;  /* Hardcoded */
   node_mac[5] = 0x00;  /* Hardcoded */
   node_mac[6] = MACID >> 8;
