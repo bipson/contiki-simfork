@@ -708,9 +708,7 @@ uip_ds6_set_addr_iid(uip_ipaddr_t *ipaddr, uip_lladdr_t *lladdr)
    * IEEE 48-bit MAC addresses */
 #if (UIP_LLADDR_LEN == 8)
   memcpy(ipaddr->u8 + 8, lladdr, UIP_LLADDR_LEN);
-  /* ip-fitting hacks
   ipaddr->u8[8] ^= 0x02;
-  */
 #elif (UIP_LLADDR_LEN == 6)
   memcpy(ipaddr->u8 + 8, lladdr, 3);
   ipaddr->u8[11] = 0xff;
