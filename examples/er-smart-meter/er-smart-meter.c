@@ -43,6 +43,10 @@
 #include "sys/rtimer.h"
 #include "contiki.h"
 #include "contiki-net.h"
+#if STATIC_ROUTING
+#warning "Compiling with static routing!"
+#include "static-routing.h"
+#endif
 
 /* Define which resources to include to meet memory constraints. */
 #define REST_RES_TEMP 1
@@ -239,7 +243,7 @@ temp_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_
     {
       PRINTF("wrong content-type!\n");
       REST.set_header_content_type(response, REST.type.TEXT_PLAIN);
-      REST.set_response_status(response, REST.status.UNSUPPORTED_MADIA_TYPE);
+      REST.set_response_status(response, REST.status.UNSUPPORTED_MEDIA_TYPE);
       err_msg = "Supporting content-types application/xml and application/exi";
       REST.set_response_payload(response, err_msg, strlen(err_msg));
       return;
@@ -860,7 +864,7 @@ battery_handler(void* request, void* response, uint8_t *buffer, uint16_t preferr
   }
   else
   {
-    REST.set_response_status(response, REST.status.UNSUPPORTED_MADIA_TYPE);
+    REST.set_response_status(response, REST.status.UNSUPPORTED_MEDIA_TYPE);
     const char *msg = "Supporting content-types text/plain and application/json";
     REST.set_response_payload(response, msg, strlen(msg));
   }
@@ -888,6 +892,12 @@ PROCESS_THREAD(rest_server_example, ev, data)
   PRINTF("LL header: %u\n", UIP_LLH_LEN);
   PRINTF("IP+UDP header: %u\n", UIP_IPUDPH_LEN);
   PRINTF("REST max chunk: %u\n", REST_MAX_CHUNK_SIZE);
+
+  /* if static routes are used rather than RPL */
+  #if STATIC_ROUTING
+    set_global_address();
+    configure_routing();
+  #endif
 
   /* Initialize the REST engine. */
   rest_init_engine();

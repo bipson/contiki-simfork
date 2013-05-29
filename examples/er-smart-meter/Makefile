@@ -4,14 +4,7 @@ all: er-smart-meter
 CONTIKI=../..
 CFLAGS += -DPROJECT_CONF_H=\"project-conf.h\"
 
-# for static routing, if enabled
-ifneq ($(TARGET), minimal-net)
-ifneq ($(TARGET), native)
-ifneq ($(findstring avr,$(TARGET)), avr)
 PROJECT_SOURCEFILES += static-routing.c
-endif
-endif
-endif
 
 # variable for root Makefile.include
 WITH_UIP6=1

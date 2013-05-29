@@ -34,6 +34,8 @@
 
 #define SICSLOWPAN_CONF_FRAG	1
 
+#define STATIC_ROUTING  1
+
 /* Disabling RDC for demo purposes. Core updates often require more memory. */
 /* For projects, optimize memory and enable RDC again. */
 #undef NETSTACK_CONF_RDC
