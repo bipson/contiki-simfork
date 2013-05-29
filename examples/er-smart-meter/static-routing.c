@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include "static-routing.h"
 
-#define DEBUG 0
+#define DEBUG 1
 #if DEBUG
 #include <stdio.h>
 #define PRINTF(...) printf(__VA_ARGS__)
@@ -44,9 +44,12 @@ const struct id_to_addrs motes_addrs[] = {
  *
  * Add the nodeid and last 4 bytes of the address to the map.
  */
-    {1, 0x000008fb},
-    {2, 0x00000853},
-    {3, 0x00000856},
+    {1, 0x00000001},
+    {2, 0x00000002},
+    {3, 0x00000003},
+    {4, 0x00000004},
+    {5, 0x00000005},
+    {6, 0x00000006},
     /*
     {2, 0x0da0d748},
     {3, 0x116ec325},
@@ -91,10 +94,10 @@ static void add_route_ext(int dest, int next) {
     uip_ipaddr_t ipaddr_dest, ipaddr_next;
     uip_ip6addr(&ipaddr_dest, 0xaaaa, 0, 0, 0, 0, 0, 0, dest);
 #if IN_COOJA
-    uip_ip6addr(&ipaddr_next, 0xfe80, 0, 0, 0, 0x0212, 0x7400 | next, next, next<<8 | next);
+    uip_ip6addr(&ipaddr_next, 0xfe80, 0, 0, 0, 0xc30c, 0 | next, next, next<<8 | next);
 #else
     uint32_t next_suffix = get_mote_suffix(next);
-    uip_ip6addr(&ipaddr_next, 0xfe80, 0, 0, 0, 0x0212, 0x7400, (next_suffix >> 16) & 0xffff, next_suffix & 0xffff);
+    uip_ip6addr(&ipaddr_next, 0xfe80, 0, 0, 0, 0xc30c, 0, (next_suffix >> 16) & 0xffff, next_suffix & 0xffff);
 #endif
     uip_ds6_route_add(&ipaddr_dest, 128, &ipaddr_next, 0);
 }
@@ -103,13 +106,13 @@ void add_route(int dest, int next) {
   PRINTF("add route %d %d\n", dest, next);
     uip_ipaddr_t ipaddr_dest, ipaddr_next;
 #if IN_COOJA
-    uip_ip6addr(&ipaddr_dest, 0xaaaa, 0, 0, 0, 0x0212, 0x7400 | dest, dest, dest<<8 | dest);
-    uip_ip6addr(&ipaddr_next, 0xfe80, 0, 0, 0, 0x0212, 0x7400 | next, next, next<<8 | next);
+    uip_ip6addr(&ipaddr_dest, 0xaaaa, 0, 0, 0, 0xc30c, 0 | dest, dest, dest<<8 | dest);
+    uip_ip6addr(&ipaddr_next, 0xfe80, 0, 0, 0, 0x030c, 0 | next, next, next<<8 | next);
 #else
     uint32_t dest_suffix = get_mote_suffix(dest);
     uint32_t next_suffix = get_mote_suffix(next);
-    uip_ip6addr(&ipaddr_dest, 0xaaaa, 0, 0, 0, 0x0212, 0x7400, (dest_suffix >> 16) & 0xffff, dest_suffix & 0xffff);
-    uip_ip6addr(&ipaddr_next, 0xfe80, 0, 0, 0, 0x0212, 0x7400, (next_suffix >> 16) & 0xffff, next_suffix & 0xffff);
+    uip_ip6addr(&ipaddr_dest, 0xaaaa, 0, 0, 0, 0xc30c, 0, (dest_suffix >> 16) & 0xffff, dest_suffix & 0xffff);
+    uip_ip6addr(&ipaddr_next, 0xfe80, 0, 0, 0, 0xc30c, 0, (next_suffix >> 16) & 0xffff, next_suffix & 0xffff);
 #endif
     uip_ds6_route_add(&ipaddr_dest, 128, &ipaddr_next, 0);
 }
