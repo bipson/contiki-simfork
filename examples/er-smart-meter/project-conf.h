@@ -34,7 +34,14 @@
 
 #define SICSLOWPAN_CONF_FRAG	1
 
-#define STATIC_ROUTING  1
+#define STATIC_ROUTING  0
+
+#define SEC_BUFF_SIZE     600
+#define MIN_BUFF_SIZE     10
+#define MINX10_BUFF_SIZE  144
+
+#define MIN(a,b) (((a) > (b)) ? (b) : (a))
+#define MAX(a,b) (((a) > (b)) ? (a) : (b))
 
 /* Disabling RDC for demo purposes. Core updates often require more memory. */
 /* For projects, optimize memory and enable RDC again. */

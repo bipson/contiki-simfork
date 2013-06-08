@@ -58,7 +58,7 @@ const struct id_to_addrs motes_addrs[] = {
     */
 };
 /* Define the size of the map. */
-#define NODES_IN_MAP    3
+#define NODES_IN_MAP    6
 
 uint32_t get_mote_suffix(int rank) {
     if(--rank >=0 && rank<(sizeof(motes_addrs)/sizeof(struct id_to_addrs))) {

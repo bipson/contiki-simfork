@@ -355,6 +355,13 @@ PROCESS_THREAD(border_router_process, ev, data)
      cpu will interfere with establishing the SLIP connection */
   NETSTACK_MAC.off(1);
 #endif
+
+#if 0
+  uip_ipaddr_t *ipaddr, *next;
+  uip_ip6addr(&ipaddr, 0xaaaa, 0,0,0,0,0,0,0x0003);
+  uip_ip6addr(&next, 0xaaaa, 0,0,0,0,0,0,0x0002);
+  uip_ds6_route_add(&ipaddr, 128, &next, 0); 
+#endif 0
  
   /* Request prefix until it has been received */
   while(!prefix_set) {
