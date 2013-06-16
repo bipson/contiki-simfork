@@ -31,31 +31,30 @@
 # Author: Oliver Schmidt <ol.sc@web.de>
 #
 
-CONTIKI_TARGET_SOURCEFILES += pfs.S pfs_write.S
+ETHERNET = cs8900a
 
 CONTIKI_CPU = $(CONTIKI)/cpu/6502
 include $(CONTIKI_CPU)/Makefile.6502
 
-CFLAGS += -DWITH_PETSCII
+STARTADDR_FLAG = -S 0x2300
 
 ifeq ($(MAKECMDGOALS),disk)
-  ifndef C1541
-    ${error C1541 not defined! You must specify where VICE c1541 resides}
+  ifndef DIR2ATR
+    ${error DIR2ATR not defined! You must specify where dir2atr resides}
   endif
 endif
 
 disk: all
-	$(C1541) -format contiki,00 d71 contiki.d71
-	$(C1541) -attach contiki.d71 -write $(CONTIKI_PROJECT).$(TARGET)          contiki,p
-	$(C1541) -attach contiki.d71 -write $(CONTIKI)/tools/$(TARGET)/sample.cfg contiki.cfg,u
-	$(C1541) -attach contiki.d71 -write cs8900a.eth                           cs8900a.eth,u
-	$(C1541) -attach contiki.d71 -write lan91c96.eth                          lan91c96.eth,u
-ifeq ($(findstring WITH_MOUSE,$(DEFINES)),WITH_MOUSE)
-	$(C1541) -attach contiki.d71 -write $(CC65_HOME)/mou/c128-1351.mou        c128-1351.mou,u
-endif
+	mkdir atr
+	cp $(CONTIKI)/tools/$(TARGET)/dos25/dos.sys atr/dos.sys
+	cp $(CONTIKI)/tools/$(TARGET)/dos25/dup.sys atr/dup.sys
+	cp $(CONTIKI_PROJECT).$(TARGET)             atr/autorun.sys
+	cp $(CONTIKI)/tools/$(TARGET)/sample.cfg    atr/contiki.cfg
 ifeq ($(HTTPD-CFS),1)
-	$(C1541) -attach contiki.d71 -write httpd-cfs/index.htm                   index.htm,u
-	$(C1541) -attach contiki.d71 -write httpd-cfs/backgrnd.gif                backgrnd.gif,u
-	$(C1541) -attach contiki.d71 -write httpd-cfs/contiki.gif                 contiki.gif,u
-	$(C1541) -attach contiki.d71 -write httpd-cfs/notfound.htm                notfound.htm,u
+	cp httpd-cfs/index.htm                      atr/index.htm
+	cp httpd-cfs/backgrnd.gif                   atr/backgrnd.gif
+	cp httpd-cfs/contiki.gif                    atr/contiki.gif
+	cp httpd-cfs/notfound.htm                   atr/notfound.htm
 endif
+	$(DIR2ATR) -b Dos25 1040 contiki.atr atr
+	rm -r atr
