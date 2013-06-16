@@ -50,7 +50,6 @@
 #endif
 
 /* Define which resources to include to meet memory constraints. */
-#define REST_RES_TEMP 0
 #define REST_RES_METER 1
 
 #include "erbium.h"
@@ -83,309 +82,84 @@
 #define PRINTLLADDR(addr)
 #endif
 
-/******************************************************************************/
-#if REST_RES_TEMP
-
-#define CHUNKS_TOTAL      1024 
-#define TEMP_MSG_MAX_SIZE 140   // more than enough right now
-#define TEMP_BUFF_MAX     7     // -234.6\0
-
-/******************************************************************************/
-/* globals ********************************************************************/
-/******************************************************************************/
-char tempstring[TEMP_BUFF_MAX];
-
-/******************************************************************************/
-/* helper functions ***********************************************************/
-/******************************************************************************/
-int temp_to_buff(char* buffer) {
-  int16_t  tempint;
-  uint16_t tempfrac;
-  int16_t  raw;
-  uint16_t absraw;
-  int16_t  sign = 1;
-
-  /* get temperature */
-  raw = tmp102_read_temp_raw();
-
-  absraw = raw;
-  if (raw < 0)
-  {
-    // Perform 2C's if sensor returned negative data
-    absraw = (raw ^ 0xFFFF) + 1;
-    sign = -1;
-  }
-  tempint  = (absraw >> 8) * sign;
-  tempfrac = ((absraw>>4) % 16) * 625; // Info in 1/10000 of degree
-  tempfrac = ((tempfrac) / 1000); // Round to 1 decimal
-
-  return snprintf(tempstring, TEMP_BUFF_MAX, "%d.%1d", tempint, tempfrac);
-}
-
-int temp_to_default_buff() {
-
-  return temp_to_buff(tempstring);
-
-}
-
-uint8_t create_response(int num, int accept, char *buffer)
-{
-  size_t size_temp;
-  int size_msgp1, size_msgp2;
-  const char *msgp1, *msgp2;
-  uint8_t size_msg;
-
-  if (num && accept==REST.type.APPLICATION_XML)
-  {
-    msgp1 = "<obj href=\"http://myhome/temp\">\n\t<real name=\"temp\" units=\"obix:units/celsius\" val=\"";
-    msgp2 = "\"/>\n</obj>\0";
-    /* hardcoded length, ugly but faster and necc. for exi-answer */
-    size_msgp1 = 83;
-    size_msgp2 = 10;
-  }
-  else if (num && accept==REST.type.APPLICATION_EXI)
-  {
-    msgp1 = "\x80\x10\x01\x04\x6F\x62\x6A\x01\x01\x00\x02\x14\x68\x74\x74\x70\x3A\x2F\x2F\x6D\x79\x68\x6F\x6D\x65\x2F\x74\x65\x6D\x70\x01\x02\x01\x05\x72\x65\x61\x6C\x01\x01\x00\x08\x06\x74\x65\x6D\x70\x01\x01\x01\x06\x75\x6E\x69\x74\x73\x14\x6F\x62\x69\x78\x3A\x75\x6E\x69\x74\x73\x2F\x63\x65\x6C\x73\x69\x75\x73\x02\x01\x01\x00\x11\x09";
-    msgp2 = "\x03\x00\x00\0";
-    /* hardcoded length, ugly but faster and necc. for exi-answer */
-    size_msgp1 = 81;
-    size_msgp2 = 3;
-  }
-  else
-  {
-    PRINTF("Unsupported encoding!\n");
-    return -1;
-  }
-
-  if ((size_temp = temp_to_default_buff()) < 0 )
-  {
-    PRINTF("Error preparing temperature string!\n");
-    return -1;
-  }
-
-  /* Some data that has the length up to REST_MAX_CHUNK_SIZE. For more, see the chunk resource. */
-  /* we assume null-appended strings behind msgp2 and tempstring */
-  size_msg = size_msgp1 + size_msgp2 + size_temp + 1;
-
-  if (size_msg > TEMP_MSG_MAX_SIZE)
-  {
-    PRINTF("Message too big!\n");
-    return -1;
-  }
-
-  memcpy(buffer, msgp1, size_msgp1);
-  memcpy(buffer + size_msgp1, tempstring, size_temp);
-  memcpy(buffer + size_msgp1 + size_temp, msgp2, size_msgp2 + 1);
-
-  return size_msg;
-}
-
-/*
- * Resources are defined by the RESOURCE macro.
- * Signature: resource name, the RESTful methods it handles, and its URI path (omitting the leading slash).
- */
-PERIODIC_RESOURCE(temp, METHOD_GET, "temp", "title=\"Hello temp: ?len=0..\";rt=\"Text\"", 5*CLOCK_SECOND);
-
-/*
- * A handler function named [resource name]_handler must be implemented for each RESOURCE.
- * A buffer for the response payload is provided through the buffer pointer. Simple resources can ignore
- * preferred_size and offset, but must respect the REST_MAX_CHUNK_SIZE limit for the buffer.
- * If a smaller block size is requested for CoAP, the REST framework automatically splits the data.
- */
-void
-temp_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset)
-{
-  /* we save the message as static variable, so it is retained through multiple calls (chunked resource) */
-  static char message[TEMP_MSG_MAX_SIZE];
-  static uint8_t size_msg;
-
-  const uint16_t *accept = NULL;
-  int num = 0, length = 0;
-  char *err_msg;
-
-  const char *len = NULL;
-
-  /* Check the offset for boundaries of the resource data. */
-  if (*offset>=CHUNKS_TOTAL)
-  {
-    REST.set_response_status(response, REST.status.BAD_OPTION);
-    /* A block error message should not exceed the minimum block size (16). */
-    err_msg = "BlockOutOfScope";
-    REST.set_response_payload(response, err_msg, strlen(err_msg));
-    return;
-  }
-
-  /* compute message once */
-  if (*offset <= 0)
-  {
-    /* decide upon content-format */
-    num = REST.get_header_accept(request, &accept);
-
-    if (num && accept[0]==REST.type.APPLICATION_XML)
-    {
-      REST.set_header_content_type(response, REST.type.APPLICATION_XML);
-    }
-    else if (num && accept[0]==REST.type.APPLICATION_EXI)
-    {
-      REST.set_header_content_type(response, REST.type.APPLICATION_EXI);
-    }
-    else
-    {
-      PRINTF("wrong content-type!\n");
-      REST.set_header_content_type(response, REST.type.TEXT_PLAIN);
-      REST.set_response_status(response, REST.status.UNSUPPORTED_MEDIA_TYPE);
-      err_msg = "Supporting content-types application/xml and application/exi";
-      REST.set_response_payload(response, err_msg, strlen(err_msg));
-      return;
-    }
-
-    if ((size_msg = create_response(num, accept[0], message)) <= 0)
-    {
-      PRINTF("ERROR while creating message!\n");
-      REST.set_response_status(response, REST.status.INTERNAL_SERVER_ERROR);
-      err_msg = "ERROR while creating message :\\";
-      REST.set_response_payload(response, err_msg, strlen(err_msg));
-      return;
-    }
-
-  }
-  
-  length = size_msg - *offset;
-
-  if (length <= 0)
-  {
-    PRINTF("AHOYHOY?!\n");
-    REST.set_response_status(response, REST.status.INTERNAL_SERVER_ERROR);
-    err_msg = "calculation of message length error, this should not happen :\\";
-    REST.set_response_payload(response, err_msg, strlen(err_msg));
-    return;
-  }
-
-  /* The query string can be retrieved by rest_get_query() or parsed for its key-value pairs. */
-  if (REST.get_query_variable(request, "len", &len))
-  {
-    length = atoi(len);
-    if (length<0) length = 0;
-  }
-
-  if (length>REST_MAX_CHUNK_SIZE)     
-  {
-    length = REST_MAX_CHUNK_SIZE;
-
-    memcpy(buffer, message + *offset, length);
-
-    /* Truncate if above CHUNKS_TOTAL bytes. */
-    if (*offset+length > CHUNKS_TOTAL)
-    {
-      length = CHUNKS_TOTAL - *offset;
-    }
-
-    /* IMPORTANT for chunk-wise resources: Signal chunk awareness to REST engine. */
-    *offset += length;
-
-    /* Signal end of resource representation. */
-    if (*offset>=CHUNKS_TOTAL)
-    {
-      *offset = -1;
-    }
-  } else {
-    memcpy(buffer, message + *offset, length);
-    *offset = -1;
-  }
-
-  REST.set_header_etag(response, (uint8_t *) &length, 1);
-  REST.set_response_payload(response, buffer, length);
-
-}
-
-void temp_periodic_handler(resource_t *r)
-{
-  static char new_value[TEMP_BUFF_MAX];
-  static uint8_t obs_counter = 0;
-  size_t size_msg;
-
-  temp_to_buff(new_value);
-
-  if (strcmp(new_value, tempstring) != 0)
-  {
-    if ((size_msg = create_response(1, REST.type.APPLICATION_XML, tempstring)) <= 0)
-    {
-      return;
-    }
-    
-    /* Build notification. */
-    coap_packet_t notification[1]; /* This way the packet can be treated as pointer as usual. */
-    coap_init_message(notification, COAP_TYPE_NON, CONTENT_2_05, 0 );
-    coap_set_payload(notification, tempstring, size_msg);
-
-    /* Notify the registered observers with the given message type, observe option, and payload. */
-    REST.notify_subscribers(r, obs_counter, notification);
-  }
-}
-#endif
-
 #if REST_RES_METER
+
+#define TEMP_MSG_MAX_SIZE 140
+#define CHUNKS_TOTAL      1024
+
 PERIODIC_RESOURCE(meter, METHOD_GET, "meter", "title=\"Hello meter: ?len=0..\";rt=\"Text\"", CLOCK_SECOND);
 uint8_t random_add, random_remove;
 /* buffers */
 uint8_t seconds_buff[SEC_BUFF_SIZE];
+#if 0
 uint8_t minutes_buff[MIN_BUFF_SIZE];
 uint8_t minutesX10_buff[MINX10_BUFF_SIZE];
-/* counter for circular buffers */
-int seconds_buff_ctr = 0;
 int minutes_buff_ctr = 0;
 int minutesX10_buff_ctr = 0;
+#endif
+/* counter for circular buffers */
+int seconds_buff_ctr;
 
 void meter_init()
 {
   PRINTF("meter_init: will now initialize\n");
+  seconds_buff_ctr = 0;
   random_init(0);
   random_add = 0;
   random_remove = random_rand() % 10;
 
   /* init buffers */
   memset(seconds_buff, 0, SEC_BUFF_SIZE);
+#if 0
   memset(minutes_buff, 0, MIN_BUFF_SIZE);
   memset(minutesX10_buff, 0, MINX10_BUFF_SIZE);
+#endif
   PRINTF("meter_init: successful\n");
 }
 
 void print_meter_buffers()
 {
   PRINTF("Position of seconds buffer: %d\n", seconds_buff_ctr);
+  PRINTF("Current seconds value: %d\n", seconds_buff[seconds_buff_ctr]);
+
+#if 0
   PRINTF("Position of minutes buffer: %d\n", minutes_buff_ctr);
   PRINTF("Position of 10 minutes buffer: %d\n", minutesX10_buff_ctr);
-
-  PRINTF("Current seconds value: %d\n", seconds_buff[seconds_buff_ctr]);
   PRINTF("Current minutes value: %d\n", minutes_buff[minutes_buff_ctr]);
   PRINTF("Current minutesX10 value: %d\n", minutesX10_buff[minutesX10_buff_ctr]);
+#endif
+
   
   PRINTF("Full seconds buffer:\n");
   int i;
-  for (i = 0; i < seconds_buff_ctr; i++)
+  for (i = 0; i < SEC_BUFF_SIZE; i++)
   {
-    PRINTF("[%d] ", seconds_buff[i]);
+    PRINTF("%i:[%d] ", i, seconds_buff[i]);
+    if ((i % 10) == 0 )
+    {
+      PRINTF("\n");
+    }
   }
-  PRINTF("\n");
-
+  PRINTF("end\n");
 }
 
-#if 0
-uint8_t create_meter_response(int num, int accept, char *buffer)
+uint8_t create_meter_response(int num, int accept, char *buffer, int window)
 {
-  size_t size_temp;
+  size_t size_value;
+  int value = 0;
   int size_msgp1, size_msgp2;
-  const char *msgp1, *msgp2;
+  const char *msgp1, *msgp2, *valuestring;
   uint8_t size_msg;
 
   if (num && accept==REST.type.APPLICATION_XML)
   {
-    msgp1 = "see mote output";
-    msgp2 = "";
+    msgp1 = "value=";
+    msgp2 = "\0";
     /* hardcoded length, ugly but faster and necc. for exi-answer */
-    size_msgp1 = 0;
-    size_msgp2 = 0;
+    size_msgp1 = 6;
+    size_msgp2 = 1;
   }
+#if 0
   else if (num && accept==REST.type.APPLICATION_EXI)
   {
     msgp1 = "\x80\x10\x01\x04\x6F\x62\x6A\x01\x01\x00\x02\x14\x68\x74\x74\x70\x3A\x2F\x2F\x6D\x79\x68\x6F\x6D\x65\x2F\x74\x65\x6D\x70\x01\x02\x01\x05\x72\x65\x61\x6C\x01\x01\x00\x08\x06\x74\x65\x6D\x70\x01\x01\x01\x06\x75\x6E\x69\x74\x73\x14\x6F\x62\x69\x78\x3A\x75\x6E\x69\x74\x73\x2F\x63\x65\x6C\x73\x69\x75\x73\x02\x01\x01\x00\x11\x09";
@@ -394,17 +168,41 @@ uint8_t create_meter_response(int num, int accept, char *buffer)
     size_msgp1 = 81;
     size_msgp2 = 3;
   }
+#endif
   else
   {
     PRINTF("Unsupported encoding!\n");
     return -1;
   }
 
-  size_temp = 0;
+  // build mean
+  int window_ctr = window - 1;
+  PRINTF("Window size: %d\n", window);
+  int buff_curr_pos = seconds_buff_ctr;
+  PRINTF("Current pos: %d\n", buff_curr_pos);
+  for (; window_ctr >= 0; window_ctr--)
+  {
+    int read_pos = buff_curr_pos - window_ctr;
+    PRINTF("read pos: %d\n", read_pos);
+    if (read_pos < 0)
+    {
+      read_pos += SEC_BUFF_SIZE;
+      PRINTF("read pos: %d\n", read_pos);
+    }
+    value += seconds_buff[read_pos];
+    PRINTF("value: %d\n", seconds_buff[read_pos]);
+    PRINTF("sum yet: %d\n", value);
+  }
+  value /= window;
+  PRINTF("mean: %d\n", value);
 
+  size_value = snprintf(NULL, 0, "%d", value);
+  valuestring = malloc(size_value + 1);
+  snprintf(valuestring, size_value + 1, "%d", value);
+  
   /* Some data that has the length up to REST_MAX_CHUNK_SIZE. For more, see the chunk resource. */
   /* we assume null-appended strings behind msgp2 and tempstring */
-  size_msg = size_msgp1 + size_msgp2 + size_temp + 1;
+  size_msg = size_msgp1 + size_msgp2 + size_value+ 1;
 
   if (size_msg > TEMP_MSG_MAX_SIZE)
   {
@@ -413,18 +211,16 @@ uint8_t create_meter_response(int num, int accept, char *buffer)
   }
 
   memcpy(buffer, msgp1, size_msgp1);
-  memcpy(buffer + size_msgp1, tempstring, size_temp);
-  memcpy(buffer + size_msgp1 + size_temp, msgp2, size_msgp2 + 1);
+  memcpy(buffer + size_msgp1, valuestring, size_value);
+  memcpy(buffer + size_msgp1 + size_value, msgp2, size_msgp2 + 1);
 
   return size_msg;
 }
-#endif
 
 void
 meter_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset)
 {
   print_meter_buffers();
-#if 0
   /* we save the message as static variable, so it is retained through multiple calls (chunked resource) */
   static char meter_message[TEMP_MSG_MAX_SIZE];
   static uint8_t size_msg;
@@ -469,7 +265,7 @@ meter_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred
       return;
     }
 
-    if ((size_msg = create_meter_response(num, accept[0], meter_message)) <= 0)
+    if ((size_msg = create_meter_response(num, accept[0], meter_message, 5)) <= 0)
     {
       PRINTF("ERROR while creating message!\n");
       REST.set_response_status(response, REST.status.INTERNAL_SERVER_ERROR);
@@ -525,7 +321,6 @@ meter_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred
 
   REST.set_header_etag(response, (uint8_t *) &length, 1);
   REST.set_response_payload(response, buffer, length);
-#endif
 
 }
 
@@ -533,6 +328,7 @@ void meter_periodic_handler(resource_t *r)
 {
   int8_t value = 0;
   int new_value = 0;
+
   /* if random_add counter is 0 or less, add another 'consumer' */
   if (random_add-- <= 0)
   {
@@ -560,6 +356,7 @@ void meter_periodic_handler(resource_t *r)
 
   seconds_buff[seconds_buff_ctr] = new_value; 
   
+#if 0
   /* decide which higher order buffers get updated as well */
   if (seconds_buff_ctr % 60 == 0)
   {
@@ -572,9 +369,9 @@ void meter_periodic_handler(resource_t *r)
       minutesX10_buff[minutesX10_buff_ctr++] = new_value;
     }
   }
+#endif
 
 }
-
 
 #endif
 
@@ -615,11 +412,6 @@ PROCESS_THREAD(rest_server_example, ev, data)
   rest_init_engine();
 
   /* Activate the application-specific resources. */
-
-#if REST_RES_TEMP
-  rest_activate_periodic_resource(&periodic_resource_temp);
-  tmp102_init();
-#endif
 
 #if REST_RES_METER
   rest_activate_periodic_resource(&periodic_resource_meter);

@@ -64,8 +64,8 @@
       <breakpoints />
       <interface_config>
         se.sics.cooja.interfaces.Position
-        <x>75.61691320542342</x>
-        <y>62.91851413235452</y>
+        <x>66.36759744782013</x>
+        <y>50.23800059370484</y>
         <z>0.0</z>
       </interface_config>
       <interface_config>
@@ -92,7 +92,7 @@
   <plugin>
     se.sics.cooja.plugins.SimControl
     <width>292</width>
-    <z>1</z>
+    <z>0</z>
     <height>190</height>
     <location_x>0</location_x>
     <location_y>0</location_y>
@@ -109,9 +109,9 @@
       <viewport>6.703198552718199 0.0 0.0 6.703198552718199 -261.8751831596119 -151.75529287117828</viewport>
     </plugin_config>
     <width>522</width>
-    <z>0</z>
+    <z>2</z>
     <height>397</height>
-    <location_x>51</location_x>
+    <location_x>10</location_x>
     <location_y>256</location_y>
   </plugin>
   <plugin>
@@ -121,10 +121,10 @@
       <coloring />
     </plugin_config>
     <width>816</width>
-    <z>2</z>
+    <z>5</z>
     <height>341</height>
-    <location_x>582</location_x>
-    <location_y>45</location_y>
+    <location_x>589</location_x>
+    <location_y>11</location_y>
   </plugin>
   <plugin>
     se.sics.cooja.plugins.RadioLogger
@@ -135,8 +135,8 @@
     <width>451</width>
     <z>4</z>
     <height>305</height>
-    <location_x>727</location_x>
-    <location_y>451</location_y>
+    <location_x>948</location_x>
+    <location_y>358</location_y>
   </plugin>
   <plugin>
     se.sics.cooja.plugins.TimeLine
@@ -150,20 +150,20 @@
       <split>125</split>
       <zoomfactor>25.49079397896416</zoomfactor>
     </plugin_config>
-    <width>1624</width>
-    <z>5</z>
-    <height>252</height>
+    <width>1392</width>
+    <z>3</z>
+    <height>249</height>
     <location_x>-2</location_x>
-    <location_y>661</location_y>
+    <location_y>666</location_y>
   </plugin>
   <plugin>
     SerialSocketServer
     <mote_arg>0</mote_arg>
     <width>422</width>
-    <z>3</z>
+    <z>1</z>
     <height>87</height>
-    <location_x>150</location_x>
-    <location_y>150</location_y>
+    <location_x>137</location_x>
+    <location_y>159</location_y>
   </plugin>
 </simconf>
 
