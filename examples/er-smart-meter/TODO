@@ -1,0 +1,18 @@
+Priority 0:
+* Register Diplomarbeit
+* Smart-Meter: Define endpoints
+* Smart-Meter: Set messages for endpoints
+* HTTP Binding: Implement endpoints
+* HTTP Binding: Implement messages on endpoints
+
+Priority 1:
+* CoAP Observe: Implement chunked messages
+* Get "values" from Cooja
+* Integrate Contiki/CoAP into OMNET++
+
+Priority 2:
+* Contiki: fixed routing?
+
+Won't Fix:
+* CoAP Observe: Content Type of Requester not fixed (shortcoming of erbium)
+  Fix: For Evaluations, just change content type programmatically depending on scenario
