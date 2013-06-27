@@ -84,63 +84,63 @@
 
 #if REST_RES_METER
 
-#define TEMP_MSG_MAX_SIZE 140
+#define TEMP_MSG_MAX_SIZE 1024
 #define CHUNKS_TOTAL      1024
 
-PERIODIC_RESOURCE(meter, METHOD_GET, "meter", "title=\"Hello meter: ?len=0..\";rt=\"Text\"", CLOCK_SECOND);
-uint8_t random_add, random_remove;
-/* buffers */
-uint8_t seconds_buff[SEC_BUFF_SIZE];
-#if 0
-uint8_t minutes_buff[MIN_BUFF_SIZE];
-uint8_t minutesX10_buff[MINX10_BUFF_SIZE];
-int minutes_buff_ctr = 0;
-int minutesX10_buff_ctr = 0;
-#endif
-/* counter for circular buffers */
-int seconds_buff_ctr;
+RESOURCE(meter, METHOD_GET, "smart-meter", "title=\"Hello meter: ?len=0..\";rt=\"Text\"");
 
-void meter_init()
+void
+meter_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset)
 {
-  PRINTF("meter_init: will now initialize\n");
-  seconds_buff_ctr = 0;
-  random_init(0);
-  random_add = 0;
-  random_remove = random_rand() % 10;
 
-  /* init buffers */
-  memset(seconds_buff, 0, SEC_BUFF_SIZE);
-#if 0
-  memset(minutes_buff, 0, MIN_BUFF_SIZE);
-  memset(minutesX10_buff, 0, MINX10_BUFF_SIZE);
-#endif
-  PRINTF("meter_init: successful\n");
 }
 
-void print_meter_buffers()
+RESOURCE(meter_power_history, METHOD_GET, "smart-meter/power/history", "title=\"Hello meter_power: ?len=0..\";rt=\"Text\"");
+
+void
+meter_power_history_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset)
 {
-  PRINTF("Position of seconds buffer: %d\n", seconds_buff_ctr);
-  PRINTF("Current seconds value: %d\n", seconds_buff[seconds_buff_ctr]);
 
-#if 0
-  PRINTF("Position of minutes buffer: %d\n", minutes_buff_ctr);
-  PRINTF("Position of 10 minutes buffer: %d\n", minutesX10_buff_ctr);
-  PRINTF("Current minutes value: %d\n", minutes_buff[minutes_buff_ctr]);
-  PRINTF("Current minutesX10 value: %d\n", minutesX10_buff[minutesX10_buff_ctr]);
-#endif
+}
 
-  
-  PRINTF("Full seconds buffer:\n");
-  int i;
-  for (i = 0; i < SEC_BUFF_SIZE; i++)
-  {
-    PRINTF("%i:[%d] ", i, seconds_buff[i]);
-    if ((i % 10) == 0 )
-    {
-      PRINTF("\n");
-    }
-  }
-  PRINTF("end\n");
+RESOURCE(meter_power_history_query, METHOD_GET, "smart-meter/power/history/query", "title=\"Hello meter_power: ?len=0..\";rt=\"Text\"");
+
+void
+meter_power_history_query_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset)
+{
+
+}
+
+RESOURCE(meter_power_history_rollup, METHOD_GET, "smart-meter/power/history/rollup", "title=\"Hello meter_power: ?len=0..\";rt=\"Text\"");
+
+void
+meter_power_history_rollup_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset)
+{
+
+}
+
+RESOURCE(meter_energy_history, METHOD_GET, "smart-meter/energy/history", "title=\"Hello meter_energy: ?len=0..\";rt=\"Text\"");
+
+void
+meter_energy_history_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset)
+{
+
+}
+
+RESOURCE(meter_energy_history_query, METHOD_GET, "smart-meter/energy/history/query", "title=\"Hello meter_energy: ?len=0..\";rt=\"Text\"");
+
+void
+meter_energy_history_query_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset)
+{
+
+}
+
+RESOURCE(meter_energy_history_rollup, METHOD_GET, "smart-meter/energy/history/rollup", "title=\"Hello meter_energy: ?len=0..\";rt=\"Text\"");
+
+void
+meter_energy_history_rollup_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset)
+{
+
 }
 
 uint8_t create_meter_response(int num, int accept, char *buffer, int window)
@@ -175,26 +175,7 @@ uint8_t create_meter_response(int num, int accept, char *buffer, int window)
     return -1;
   }
 
-  // build mean
-  int window_ctr = window - 1;
-  PRINTF("Window size: %d\n", window);
-  int buff_curr_pos = seconds_buff_ctr;
-  PRINTF("Current pos: %d\n", buff_curr_pos);
-  for (; window_ctr >= 0; window_ctr--)
-  {
-    int read_pos = buff_curr_pos - window_ctr;
-    PRINTF("read pos: %d\n", read_pos);
-    if (read_pos < 0)
-    {
-      read_pos += SEC_BUFF_SIZE;
-      PRINTF("read pos: %d\n", read_pos);
-    }
-    value += seconds_buff[read_pos];
-    PRINTF("value: %d\n", seconds_buff[read_pos]);
-    PRINTF("sum yet: %d\n", value);
-  }
-  value /= window;
-  PRINTF("mean: %d\n", value);
+  value = 10;
 
   size_value = snprintf(NULL, 0, "%d", value);
   valuestring = malloc(size_value + 1);
@@ -218,9 +199,8 @@ uint8_t create_meter_response(int num, int accept, char *buffer, int window)
 }
 
 void
-meter_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset)
+meter_foo_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset)
 {
-  print_meter_buffers();
   /* we save the message as static variable, so it is retained through multiple calls (chunked resource) */
   static char meter_message[TEMP_MSG_MAX_SIZE];
   static uint8_t size_msg;
@@ -323,56 +303,6 @@ meter_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred
   REST.set_response_payload(response, buffer, length);
 
 }
-
-void meter_periodic_handler(resource_t *r)
-{
-  int8_t value = 0;
-  int new_value = 0;
-
-  /* if random_add counter is 0 or less, add another 'consumer' */
-  if (random_add-- <= 0)
-  {
-    value = (random_rand() % 100);
-    random_add = random_rand() % 20;
-  }
-  /* although it seems wrong, we don't want to add and remove in the same step, so we use 'else if'
-  and just delay the removal */
-  else if (random_remove-- <= 0)
-  {
-    value = -(random_rand() % 100);
-    random_remove = random_rand() % 15;
-  }
-
-  new_value = seconds_buff[seconds_buff_ctr];
-  if (value != 0)
-  {
-    new_value = new_value + value;
-
-    new_value = MAX(0, new_value);
-    new_value = MIN(255, new_value);
-  }
-
-  seconds_buff_ctr = (seconds_buff_ctr + 1 == SEC_BUFF_SIZE ? 0 : seconds_buff_ctr + 1);
-
-  seconds_buff[seconds_buff_ctr] = new_value; 
-  
-#if 0
-  /* decide which higher order buffers get updated as well */
-  if (seconds_buff_ctr % 60 == 0)
-  {
-    minutes_buff_ctr = (minutes_buff_ctr + 1 == MIN_BUFF_SIZE ? 0 : minutes_buff_ctr + 1);
-    minutes_buff[minutes_buff_ctr] = new_value;
-
-    if (minutes_buff_ctr % 10 == 0)
-    {
-      minutesX10_buff_ctr = (minutesX10_buff_ctr + 1 == MINX10_BUFF_SIZE ? 0 :minutes_buff_ctr + 1);
-      minutesX10_buff[minutesX10_buff_ctr++] = new_value;
-    }
-  }
-#endif
-
-}
-
 #endif
 
 PROCESS(rest_server_example, "Erbium Example Server");
@@ -414,8 +344,12 @@ PROCESS_THREAD(rest_server_example, ev, data)
   /* Activate the application-specific resources. */
 
 #if REST_RES_METER
-  rest_activate_periodic_resource(&periodic_resource_meter);
-  meter_init();
+  rest_activate_resource(&resource_meter_power_history);
+  rest_activate_resource(&resource_meter_power_history_query);
+  rest_activate_resource(&resource_meter_power_history_rollup);
+  rest_activate_resource(&resource_meter_energy_history);
+  rest_activate_resource(&resource_meter_energy_history_query);
+  rest_activate_resource(&resource_meter_energy_history_rollup);
 #endif
 
   /* Define application-specific events here. */
