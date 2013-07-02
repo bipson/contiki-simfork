@@ -204,58 +204,30 @@ meter_foo_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
   /* we save the message as static variable, so it is retained through multiple calls (chunked resource) */
   static char meter_message[TEMP_MSG_MAX_SIZE];
   static uint8_t size_msg;
-
-  const uint16_t *accept = NULL;
-  int num = 0, length = 0;
-  char *err_msg;
-
+  int length = 0;
   const char *len = NULL;
-
-  /* Check the offset for boundaries of the resource data. */
-  if (*offset>=CHUNKS_TOTAL)
-  {
-    REST.set_response_status(response, REST.status.BAD_OPTION);
-    /* A block error message should not exceed the minimum block size (16). */
-    err_msg = "BlockOutOfScope";
-    REST.set_response_payload(response, err_msg, strlen(err_msg));
-    return;
-  }
+  char *err_msg;
 
   /* compute message once */
   if (*offset <= 0)
   {
-    /* decide upon content-format */
-    num = REST.get_header_accept(request, &accept);
-
-    if (num && accept[0]==REST.type.APPLICATION_XML)
+    if ((size_msg = create_response(meter_message, request, offset, 0)) <= 0)
     {
-      REST.set_header_content_type(response, REST.type.APPLICATION_XML);
-    }
-    else if (num && accept[0]==REST.type.APPLICATION_EXI)
-    {
-      REST.set_header_content_type(response, REST.type.APPLICATION_EXI);
-    }
-    else
-    {
-      PRINTF("wrong content-type!\n");
-      REST.set_header_content_type(response, REST.type.TEXT_PLAIN);
-      REST.set_response_status(response, REST.status.UNSUPPORTED_MEDIA_TYPE);
-      err_msg = "Supporting content-types application/xml and application/exi";
-      REST.set_response_payload(response, err_msg, strlen(err_msg));
-      return;
-    }
-
-    if ((size_msg = create_meter_response(num, accept[0], meter_message, 5)) <= 0)
-    {
-      PRINTF("ERROR while creating message!\n");
+      PRINTF("AHOYHOY?!\n");
       REST.set_response_status(response, REST.status.INTERNAL_SERVER_ERROR);
-      err_msg = "ERROR while creating message :\\";
+      err_msg = "calculation of message length error, this should not happen :\\";
       REST.set_response_payload(response, err_msg, strlen(err_msg));
       return;
     }
-
   }
-  
+
+  send_message(message, size_msg, request, response, buffer, offset);
+
+}
+
+void
+send_message(char* message, uint8_t size_msg, void* request, void* response, uint8_t *buffer, uint32_t *offset)
+{
   length = size_msg - *offset;
 
   if (length <= 0)
@@ -271,7 +243,8 @@ meter_foo_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
   if (REST.get_query_variable(request, "len", &len))
   {
     length = atoi(len);
-    if (length<0) length = 0;
+    if (length < 0)
+      length = 0;
   }
 
   if (length>REST_MAX_CHUNK_SIZE)     
@@ -282,27 +255,77 @@ meter_foo_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
 
     /* Truncate if above CHUNKS_TOTAL bytes. */
     if (*offset+length > CHUNKS_TOTAL)
-    {
       length = CHUNKS_TOTAL - *offset;
-    }
 
     /* IMPORTANT for chunk-wise resources: Signal chunk awareness to REST engine. */
     *offset += length;
 
     /* Signal end of resource representation. */
     if (*offset>=CHUNKS_TOTAL)
-    {
       *offset = -1;
-    }
-  } else {
+  }
+  else
+  {
     memcpy(buffer, meter_message + *offset, length);
     *offset = -1;
   }
 
   REST.set_header_etag(response, (uint8_t *) &length, 1);
   REST.set_response_payload(response, buffer, length);
+}
 
 }
+
+int8_t create_response(char* meter_message, void* request, int32_t *offset, int8_t message_type)
+{
+  uint8_t size_msg;
+  const uint16_t *accept = NULL;
+  int num = 0;
+
+  /* Check the offset for boundaries of the resource data. */
+  if (*offset>=CHUNKS_TOTAL)
+  {
+    REST.set_response_status(response, REST.status.BAD_OPTION);
+    /* A block error message should not exceed the minimum block size (16). */
+    err_msg = "BlockOutOfScope";
+    REST.set_response_payload(response, err_msg, strlen(err_msg));
+    return;
+  }
+
+  /* decide upon content-format */
+  num = REST.get_header_accept(request, &accept);
+
+  if (num && accept[0]==REST.type.APPLICATION_XML)
+  {
+    REST.set_header_content_type(response, REST.type.APPLICATION_XML);
+  }
+  else if (num && accept[0]==REST.type.APPLICATION_EXI)
+  {
+    REST.set_header_content_type(response, REST.type.APPLICATION_EXI);
+  }
+  else
+  {
+    PRINTF("wrong content-type!\n");
+    REST.set_header_content_type(response, REST.type.TEXT_PLAIN);
+    REST.set_response_status(response, REST.status.UNSUPPORTED_MEDIA_TYPE);
+    err_msg = "Supporting content-types application/xml and application/exi";
+    REST.set_response_payload(response, err_msg, strlen(err_msg));
+    return -1;
+  }
+
+  //TODO adjust to different message_types
+  if ((size_msg = create_meter_response(num, accept[0], meter_message, 5)) <= 0)
+  {
+    PRINTF("ERROR while creating message!\n");
+    REST.set_response_status(response, REST.status.INTERNAL_SERVER_ERROR);
+    err_msg = "ERROR while creating message :\\";
+    REST.set_response_payload(response, err_msg, strlen(err_msg));
+    return -1;
+  }
+
+  return size_msg;
+}
+  
 #endif
 
 PROCESS(rest_server_example, "Erbium Example Server");

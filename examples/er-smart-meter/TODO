@@ -1,6 +1,4 @@
 Priority 0:
-* Register Diplomarbeit
-* Smart-Meter: Define endpoints
 * Smart-Meter: Set messages for endpoints
 * HTTP Binding: Implement endpoints
 * HTTP Binding: Implement messages on endpoints
