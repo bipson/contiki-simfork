@@ -85,8 +85,8 @@
 
 #if REST_RES_METER
 
-static char *msg[RESSOURCES_SIZE][NR_ENCODINGS];
-static uint8_t msg_size[RESSOURCES_SIZE][NR_ENCODINGS];
+static char *msg[RESOURCES_SIZE][NR_ENCODINGS];
+static uint8_t msg_size[RESOURCES_SIZE][NR_ENCODINGS];
 
 #define CHUNKS_TOTAL      1024
 
@@ -180,6 +180,10 @@ send_message(const char* message, const uint8_t size_msg, void* request, void* r
   char *err_msg;
   const char* len;
 
+  PRINTF("Message: %s\n", message);
+  PRINTF("Size: %d\n", size_msg);
+  PRINTF("Offset: %d\n", *offset);
+
   length = size_msg - *offset;
 
   if (length <= 0)
@@ -222,16 +226,19 @@ send_message(const char* message, const uint8_t size_msg, void* request, void* r
     *offset = -1;
   }
 
+  PRINTF("Buffer: %s\n", buffer);
+  PRINTF("Length: %d\n", length);
+
   REST.set_header_etag(response, (uint8_t *) &length, 1);
   REST.set_response_payload(response, buffer, length);
 }
 
 void
-set_error_response(void* response, int size_msg)
+set_error_response(void* response, int8_t error_code)
 {
   char *err_msg;
 
-  switch(size_msg)
+  switch(error_code)
   {
     case ERR_BLOCKOUTOFSCOPE:
       REST.set_response_status(response, REST.status.BAD_OPTION);
@@ -261,7 +268,7 @@ set_error_response(void* response, int size_msg)
 }
 
 uint8_t
-create_response(const char* message, uint8_t resource, void* request, void* response, uint8_t *encoding)
+create_response(const char **message, uint8_t resource, void *request, void *response, int8_t *encoding)
 {
   const uint16_t *accept = NULL;
   uint8_t num;
@@ -274,7 +281,11 @@ create_response(const char* message, uint8_t resource, void* request, void* resp
   {
     *encoding = accept[0];
     PRINTF("Encoding is %d\n", *encoding);
-    message = msg[resource][*encoding];
+    *message = msg[resource][*encoding];
+    PRINTF("Message: %s\n", *message);
+    PRINTF("Message location: %d\n", *message);
+    PRINTF("msg location: %d\n", msg[resource][*encoding]);
+    PRINTF("Size: %d\n", msg_size[resource][*encoding]);
     REST.set_header_content_type(response, *encoding);
     return msg_size[resource][*encoding];
   }
@@ -289,24 +300,44 @@ RESOURCE(meter, METHOD_GET, "smart-meter", "title=\"Hello meter: ?len=0..\";rt=\
 void
 meter_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset)
 {
-  PRINTF("Handler called\n");
+  PRINTF("\nHandler called\n");
   /* we save the message as static variable, so it is retained through multiple calls (chunked resource) */
-  const char *meter_message = NULL;
-  uint8_t size_msg = -1;
-  uint8_t acc_encoding = -1;
+  static const char *meter_message;
+  static int8_t size_msg;
+  static int8_t acc_encoding;
+
+  PRINTF("Message location: %d\n", meter_message);
 
   /* compute message once */
   if (*offset <= 0)
   {
-    PRINTF("Will create response");
-    if ((size_msg = create_response(meter_message, RESSOURCES_METER, request, response, &acc_encoding)) <= 0)
+    PRINTF("First call (offset <= 0)\n");
+
+    /* init text for this handler */
+    char *msg_xml = "value xml\0";
+    uint8_t msg_size_xml = 10;
+    msg[RESOURCES_METER][REST.type.APPLICATION_XML] = malloc(msg_size_xml);
+    msg_size[RESOURCES_METER][REST.type.APPLICATION_XML] = msg_size_xml;
+    memcpy(msg[RESOURCES_METER][REST.type.APPLICATION_XML], msg_xml, msg_size_xml);
+    msg[RESOURCES_METER][REST.type.APPLICATION_EXI] = "value exi\0";
+    msg_size[RESOURCES_METER][REST.type.APPLICATION_EXI] = 10;
+
+    size_msg = -1;
+    acc_encoding = -1;
+    PRINTF("Will create response\n");
+    if ((size_msg = create_response(&meter_message, RESOURCES_METER, request, response, &acc_encoding)) <= 0)
     {
+      PRINTF("Error caught: %d\n", size_msg);
       set_error_response(response, size_msg);
       return;
     }
   }
 
-  PRINTF("Will send message\n");
+  PRINTF("Will send message: %s\n", meter_message);
+  PRINTF("Message location: %d\n", meter_message);
+  PRINTF("msg location: %d\n", msg[RESOURCES_METER][REST.type.APPLICATION_XML]);
+  PRINTF("Size: %d\n", size_msg);
+  PRINTF("Encoding: %d\n", acc_encoding);
   send_message(meter_message, size_msg, request, response, buffer, offset);
   return;
 }
@@ -401,10 +432,6 @@ PROCESS_THREAD(rest_server_example, ev, data)
 
 #if REST_RES_METER
   rest_activate_resource(&resource_meter);
-  msg[RESSOURCES_METER][REST.type.APPLICATION_XML] = "value xml\0";
-  msg_size[RESSOURCES_METER][REST.type.APPLICATION_XML] = 10;
-  msg[RESSOURCES_METER][REST.type.APPLICATION_EXI] = "value exi\0";
-  msg_size[RESSOURCES_METER][REST.type.APPLICATION_EXI] = 10;
 
   rest_activate_resource(&resource_meter_power_history);
   rest_activate_resource(&resource_meter_power_history_query);

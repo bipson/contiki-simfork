@@ -2,8 +2,8 @@
 #define ER_SMART_METER_H
 
 typedef enum {
-  RESSOURCES_METER = 0,
-  RESSOURCES_SIZE
+  RESOURCES_METER = 0,
+  RESOURCES_SIZE
 } resource;
 
 #define NR_ENCODINGS  51
