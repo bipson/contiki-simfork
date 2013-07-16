@@ -33,6 +33,8 @@
  * \file
  *      Erbium (Er) REST Engine example (with CoAP-specific code)
  * \author
+ *      Philipp Raich <philipp.raich@student.tuwien.ac.at>
+ *      based on CoAP implementation by:
  *      Matthias Kovatsch <kovatsch@inf.ethz.ch>
  */
 
@@ -84,99 +86,19 @@
 #endif
 
 #if REST_RES_METER
-
 static char *msg[RESOURCES_SIZE][NR_ENCODINGS];
-static uint8_t msg_size[RESOURCES_SIZE][NR_ENCODINGS];
+static uint16_t msg_size[RESOURCES_SIZE][NR_ENCODINGS];
 
-#define CHUNKS_TOTAL      1024
+#define CHUNKS_TOTAL    4096
 
 /********************/
 /* helper functions */
 /********************/
 
-#if 0
-uint8_t create_message(char *buffer, char *)
-{
-  size_t size_value;
-  int value = 0;
-  int size_msgp1, size_msgp2;
-  const char *msgp1, *msgp2, *valuestring;
-  uint8_t size_msg;
-
-  if (encoding==REST.type.APPLICATION_XML)
-  {
-    msgp1 = "value=";
-    msgp2 = "\0";
-    /* hardcoded length, ugly but faster and necc. for exi-answer */
-    size_msgp1 = 6;
-    size_msgp2 = 1;
-  }
-#if 0
-  else if (accept==REST.type.APPLICATION_EXI)
-  {
-    msgp1 = "\x80\x10\x01\x04\x6F\x62\x6A\x01\x01\x00\x02\x14\x68\x74\x74\x70\x3A\x2F\x2F\x6D\x79\x68\x6F\x6D\x65\x2F\x74\x65\x6D\x70\x01\x02\x01\x05\x72\x65\x61\x6C\x01\x01\x00\x08\x06\x74\x65\x6D\x70\x01\x01\x01\x06\x75\x6E\x69\x74\x73\x14\x6F\x62\x69\x78\x3A\x75\x6E\x69\x74\x73\x2F\x63\x65\x6C\x73\x69\x75\x73\x02\x01\x01\x00\x11\x09";
-    msgp2 = "\x03\x00\x00\0";
-    /* hardcoded length, ugly but faster and necc. for exi-answer */
-    size_msgp1 = 81;
-    size_msgp2 = 3;
-  }
-#endif
-  else
-  {
-    PRINTF("Unsupported encoding!\n");
-    return -1;
-  }
-
-  value = 10;
-
-  size_value = snprintf(NULL, 0, "%d", value);
-  valuestring = malloc(size_value + 1);
-  snprintf(valuestring, size_value + 1, "%d", value);
-  
-  /* Some data that has the length up to REST_MAX_CHUNK_SIZE. For more, see the chunk resource. */
-  /* we assume null-appended strings behind msgp2 and tempstring */
-  size_msg = size_msgp1 + size_msgp2 + size_value+ 1;
-
-  if (size_msg > TEMP_MSG_MAX_SIZE)
-  {
-    PRINTF("Message too big!\n");
-    return -1;
-  }
-
-  memcpy(buffer, msgp1, size_msgp1);
-  memcpy(buffer + size_msgp1, valuestring, size_value);
-  memcpy(buffer + size_msgp1 + size_value, msgp2, size_msgp2 + 1);
-
-  return size_msg;
-}
-#endif
-
-#if 0
-int8_t
-create_response(char* meter_message, void* request, int32_t *offset, int8_t message_type, int encoding)
-{
-  uint8_t size_msg;
-
-  /* Check the offset for boundaries of the resource data. */
-  if (*offset>=CHUNKS_TOTAL)
-  {
-    return ERR_BLOCKOUTOFSCOPE;
-  }
-
-  //TODO adjust to different message_types
-  if ((size_msg = create_meter_response(encoding, meter_message, 5)) <= 0)
-  {
-    return ERR_ALLOC;
-  }
-
-  return size_msg;
-}
-#endif
-
 void
-send_message(const char* message, const uint8_t size_msg, void* request, void* response, uint8_t *buffer, int32_t *offset)
+send_message(const char* message, const uint16_t size_msg, void* request, void* response, uint8_t *buffer, int32_t *offset)
 {
-  uint8_t length;
+  uint16_t length;
   char *err_msg;
   const char* len;
 
@@ -222,7 +144,7 @@ send_message(const char* message, const uint8_t size_msg, void* request, void* r
     *offset = -1;
   }
 
-  REST.set_header_etag(response, (uint8_t *) &length, 1);
+  REST.set_header_etag(response, (uint16_t *) &length, 1);
   REST.set_response_payload(response, buffer, length);
 }
 
@@ -260,7 +182,7 @@ set_error_response(void* response, int8_t error_code)
   return;
 }
 
-uint8_t
+int16_t
 create_response(const char **message, uint8_t resource, void *request, void *response, int8_t *encoding)
 {
   const uint16_t *accept = NULL;
@@ -272,8 +194,12 @@ create_response(const char **message, uint8_t resource, void *request, void *res
   if (num && (accept[0]==REST.type.APPLICATION_XML || accept[0]==REST.type.APPLICATION_EXI) )
   {
     *encoding = accept[0];
-    *message = msg[resource][*encoding];
+    if ((*message = msg[resource][*encoding]) == NULL)
+    {
+      return ERR_ALLOC;
+    }
     REST.set_header_content_type(response, *encoding);
+    PRINTF("size found: %d\n", msg_size[resource][*encoding]);
     return msg_size[resource][*encoding];
   }
   else
@@ -281,6 +207,10 @@ create_response(const char **message, uint8_t resource, void *request, void *res
     return ERR_WRONGCONTENTTYPE;
   }
 }
+
+/********************/
+/* Resources ********/
+/********************/
 
 RESOURCE(meter, METHOD_GET, "smart-meter", "title=\"Hello meter: ?len=0..\";rt=\"Text\"");
 
@@ -290,26 +220,28 @@ meter_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred
   PRINTF("\nMeter handler called\n");
   /* we save the message as static variable, so it is retained through multiple calls (chunked resource) */
   static const char *meter_message;
-  static int8_t size_msg;
+  static uint16_t size_msg;
   static int8_t acc_encoding;
 
   /* compute message once */
   if (*offset <= 0)
   {
     PRINTF("First call (offset <= 0)\n");
-    size_msg = -1;
+    int16_t message_size = -1;
     acc_encoding = -1;
     PRINTF("Will create response\n");
-    if ((size_msg = create_response(&meter_message, RESOURCES_METER, request, response, &acc_encoding)) <= 0)
+    if ((message_size = create_response(&meter_message, RESOURCES_METER, request, response, &acc_encoding)) <= 0)
     {
-      PRINTF("Error caught: %d\n", size_msg);
-      set_error_response(response, size_msg);
+      PRINTF("Error caught: %d\n", message_size);
+      set_error_response(response, message_size);
       return;
     }
+    size_msg = message_size;
   }
 
   PRINTF("Will send message: %s\n", meter_message);
   PRINTF("Encoding: %d\n", acc_encoding);
+  PRINTF("Size: %d\n", size_msg);
   send_message(meter_message, size_msg, request, response, buffer, offset);
   return;
 }
@@ -319,6 +251,32 @@ RESOURCE(meter_power_history, METHOD_GET, "smart-meter/power/history", "title=\"
 void
 meter_power_history_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset)
 {
+  PRINTF("\nMeter Power history handler called\n");
+  /* we save the message as static variable, so it is retained through multiple calls (chunked resource) */
+  static const char *meter_message;
+  static uint16_t size_msg;
+  static int8_t acc_encoding;
+
+  /* compute message once */
+  if (*offset <= 0)
+  {
+    PRINTF("First call (offset <= 0)\n");
+    int16_t message_size = -1;
+    acc_encoding = -1;
+    PRINTF("Will create response\n");
+    if ((message_size = create_response(&meter_message, RESOURCES_METER_POWER_HISTORY, request, response, &acc_encoding)) <= 0)
+    {
+      PRINTF("Error caught: %d\n", message_size);
+      set_error_response(response, message_size);
+      return;
+    }
+    size_msg = message_size;
+  }
+
+  PRINTF("Will send message: %s\n", meter_message);
+  PRINTF("Encoding: %d\n", acc_encoding);
+  send_message(meter_message, size_msg, request, response, buffer, offset);
+  return;
 
 }
 
@@ -327,7 +285,32 @@ RESOURCE(meter_power_history_query, METHOD_GET, "smart-meter/power/history/query
 void
 meter_power_history_query_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset)
 {
+  PRINTF("\nMeter Power history query handler called\n");
+  /* we save the message as static variable, so it is retained through multiple calls (chunked resource) */
+  static const char *meter_message;
+  static uint16_t size_msg;
+  static int8_t acc_encoding;
 
+  /* compute message once */
+  if (*offset <= 0)
+  {
+    PRINTF("First call (offset <= 0)\n");
+    int16_t message_size = -1;
+    acc_encoding = -1;
+    PRINTF("Will create response\n");
+    if ((message_size = create_response(&meter_message, RESOURCES_METER_POWER_HISTORY_QUERY, request, response, &acc_encoding)) <= 0)
+    {
+      PRINTF("Error caught: %d\n", message_size);
+      set_error_response(response, message_size);
+      return;
+    }
+    size_msg = message_size;
+  }
+
+  PRINTF("Will send message: %s\n", meter_message);
+  PRINTF("Encoding: %d\n", acc_encoding);
+  send_message(meter_message, size_msg, request, response, buffer, offset);
+  return;
 }
 
 RESOURCE(meter_power_history_rollup, METHOD_GET, "smart-meter/power/history/rollup", "title=\"Hello meter_power: ?len=0..\";rt=\"Text\"");
@@ -335,15 +318,67 @@ RESOURCE(meter_power_history_rollup, METHOD_GET, "smart-meter/power/history/roll
 void
 meter_power_history_rollup_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset)
 {
+  PRINTF("\nMeter Power history rollup handler called\n");
+  /* we save the message as static variable, so it is retained through multiple calls (chunked resource) */
+  static const char *meter_message;
+  static uint16_t size_msg;
+  static int8_t acc_encoding;
 
+  /* compute message once */
+  if (*offset <= 0)
+  {
+    PRINTF("First call (offset <= 0)\n");
+    int16_t message_size = -1;
+    acc_encoding = -1;
+    PRINTF("Will create response\n");
+    if ((message_size = create_response(&meter_message, RESOURCES_METER_POWER_HISTORY_ROLLUP, request, response, &acc_encoding)) <= 0)
+    {
+      PRINTF("Error caught: %d\n", message_size);
+      set_error_response(response, message_size);
+      return;
+    }
+    size_msg = message_size;
+  }
+
+  PRINTF("Will send message: %s\n", meter_message);
+  PRINTF("Encoding: %d\n", acc_encoding);
+  PRINTF("Size: %d\n", size_msg);
+  send_message(meter_message, size_msg, request, response, buffer, offset);
+  return;
 }
 
+#if 0
 RESOURCE(meter_energy_history, METHOD_GET, "smart-meter/energy/history", "title=\"Hello meter_energy: ?len=0..\";rt=\"Text\"");
 
 void
 meter_energy_history_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset)
 {
+  PRINTF("\nMeter Energy history handler called\n");
+  /* we save the message as static variable, so it is retained through multiple calls (chunked resource) */
+  static const char *meter_message;
+  static uint16_t size_msg;
+  static int8_t acc_encoding;
 
+  /* compute message once */
+  if (*offset <= 0)
+  {
+    PRINTF("First call (offset <= 0)\n");
+    int16_t message_size = -1;
+    acc_encoding = -1;
+    PRINTF("Will create response\n");
+    if ((message_size = create_response(&meter_message, RESOURCES_METER_ENERGY_HISTORY, request, response, &acc_encoding)) <= 0)
+    {
+      PRINTF("Error caught: %d\n", message_size);
+      set_error_response(response, message_size);
+      return;
+    }
+    size_msg = message_size;
+  }
+
+  PRINTF("Will send message: %s\n", meter_message);
+  PRINTF("Encoding: %d\n", acc_encoding);
+  send_message(meter_message, size_msg, request, response, buffer, offset);
+  return;
 }
 
 RESOURCE(meter_energy_history_query, METHOD_GET, "smart-meter/energy/history/query", "title=\"Hello meter_energy: ?len=0..\";rt=\"Text\"");
@@ -351,7 +386,32 @@ RESOURCE(meter_energy_history_query, METHOD_GET, "smart-meter/energy/history/que
 void
 meter_energy_history_query_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset)
 {
+  PRINTF("\nMeter Energy history query handler called\n");
+  /* we save the message as static variable, so it is retained through multiple calls (chunked resource) */
+  static const char *meter_message;
+  static uint16_t size_msg;
+  static int8_t acc_encoding;
 
+  /* compute message once */
+  if (*offset <= 0)
+  {
+    PRINTF("First call (offset <= 0)\n");
+    int16_t message_size = -1;
+    acc_encoding = -1;
+    PRINTF("Will create response\n");
+    if ((message_size = create_response(&meter_message, RESOURCES_METER_ENERGY_HISTORY_QUERY, request, response, &acc_encoding)) <= 0)
+    {
+      PRINTF("Error caught: %d\n", message_size);
+      set_error_response(response, message_size);
+      return;
+    }
+    size_msg = message_size;
+  }
+
+  PRINTF("Will send message: %s\n", meter_message);
+  PRINTF("Encoding: %d\n", acc_encoding);
+  send_message(meter_message, size_msg, request, response, buffer, offset);
+  return;
 }
 
 RESOURCE(meter_energy_history_rollup, METHOD_GET, "smart-meter/energy/history/rollup", "title=\"Hello meter_energy: ?len=0..\";rt=\"Text\"");
@@ -359,8 +419,34 @@ RESOURCE(meter_energy_history_rollup, METHOD_GET, "smart-meter/energy/history/ro
 void
 meter_energy_history_rollup_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset)
 {
+  PRINTF("\nMeter Energy history rollup handler called\n");
+  /* we save the message as static variable, so it is retained through multiple calls (chunked resource) */
+  static const char *meter_message;
+  static uint16_t size_msg;
+  static int8_t acc_encoding;
 
+  /* compute message once */
+  if (*offset <= 0)
+  {
+    PRINTF("First call (offset <= 0)\n");
+    int16_t message_size = -1;
+    acc_encoding = -1;
+    PRINTF("Will create response\n");
+    if ((message_size = create_response(&meter_message, RESOURCES_METER_ENERGY_HISTORY_ROLLUP, request, response, &acc_encoding)) <= 0)
+    {
+      PRINTF("Error caught: %d\n", message_size);
+      set_error_response(response, message_size);
+      return;
+    }
+    size_msg = message_size;
+  }
+
+  PRINTF("Will send message: %s\n", meter_message);
+  PRINTF("Encoding: %d\n", acc_encoding);
+  send_message(meter_message, size_msg, request, response, buffer, offset);
+  return;
 }
+#endif /* 0 */
 
 #endif
 
@@ -403,6 +489,10 @@ PROCESS_THREAD(rest_server_example, ev, data)
   /* Activate the application-specific resources. */
 
 #if REST_RES_METER
+
+  /* clear msg_size array to prevent programmer errors */
+  memset(&msg_size[0][0], -1, RESOURCES_SIZE * NR_ENCODINGS * sizeof(uint16_t));
+
   rest_activate_resource(&resource_meter);
   msg[RESOURCES_METER][REST.type.APPLICATION_XML] = "value xml\0";
   msg_size[RESOURCES_METER][REST.type.APPLICATION_XML] = 10;
@@ -410,11 +500,120 @@ PROCESS_THREAD(rest_server_example, ev, data)
   msg_size[RESOURCES_METER][REST.type.APPLICATION_EXI] = 10;
 
   rest_activate_resource(&resource_meter_power_history);
+  msg[RESOURCES_METER_POWER_HISTORY][REST.type.APPLICATION_XML] = "historyxm\0";
+  msg_size[RESOURCES_METER_POWER_HISTORY][REST.type.APPLICATION_XML] = 10;
+  msg[RESOURCES_METER_POWER_HISTORY][REST.type.APPLICATION_EXI] = "historyex\0";
+  msg_size[RESOURCES_METER_POWER_HISTORY][REST.type.APPLICATION_EXI] = 10;
+
   rest_activate_resource(&resource_meter_power_history_query);
+  msg[RESOURCES_METER_POWER_HISTORY_QUERY][REST.type.APPLICATION_XML] = "<obj is=\"obix:HistoryQueryOut\">\n\
+\t<int name=\"count\" href=\"count\" val=\"5\"/>\n\
+\t<abstime name=\"start\" href=\"start\" val=\"2013-06-19T15:41:56.133+02:00\" tz=\"Europe/Vienna\"/>\n\
+\t<abstime name=\"end\" href=\"end\" val=\"2013-06-19T15:47:35.950+02:00\" tz=\"Europe/Vienna\"/>\n\
+\t<list of=\"obix:HistoryRecord\">\n\
+\t\t<obj>\n\
+\t\t\t<abstime val=\"2013-06-19T15:41:56.133+02:00\" tz=\"Europe/Vienna\"/>\n\
+\t\t\t<real val=\"300.0\"/>\n\
+\t\t</obj>\n\
+\t\t<obj>\n\
+\t\t\t<abstime val=\"2013-06-19T15:47:26.796+02:00\" tz=\"Europe/Vienna\"/>\n\
+\t\t\t<real val=\"450.0\"/>\n\
+\t\t</obj>\n\
+\t\t<obj>\n\
+\t\t\t<abstime val=\"2013-06-19T15:47:30.878+02:00\" tz=\"Europe/Vienna\"/>\n\
+\t\t\t<real val=\"500.0\"/>\n\
+\t\t</obj>\n\
+\t\t<obj>\n\
+\t\t\t<abstime val=\"2013-06-19T15:47:33.923+02:00\" tz=\"Europe/Vienna\"/>\n\
+\t\t\t<real val=\"650.0\"/>\n\
+\t\t</obj>\n\
+\t\t<obj>\n\
+\t\t\t<abstime val=\"2013-06-19T15:47:35.950+02:00\" tz=\"Europe/Vienna\"/>\n\
+\t\t\t<real val=\"1650.0\"/>\n\
+\t\t</obj>\n\
+\t</list>\n\
+</obj>";
+  msg_size[RESOURCES_METER_POWER_HISTORY_QUERY][REST.type.APPLICATION_XML] = 849;
+  msg[RESOURCES_METER_POWER_HISTORY_QUERY][REST.type.APPLICATION_EXI] = "historyex\0";
+  msg_size[RESOURCES_METER_POWER_HISTORY_QUERY][REST.type.APPLICATION_EXI] = 10;
+
   rest_activate_resource(&resource_meter_power_history_rollup);
+  msg[RESOURCES_METER_POWER_HISTORY_ROLLUP][REST.type.APPLICATION_XML] = "<obj is=\"obix:HistoryRollupOut\">\n\
+\t<int name=\"count\" href=\"count\" val=\"5\"/>\n\
+\t<abstime name=\"start\" href=\"start\" val=\"2013-06-19T15:40:59.461+02:00\" tz=\"Europe/Vienna\"/>\n\
+\t<abstime name=\"end\" href=\"end\" val=\"2013-06-19T15:48:06.584+02:00\" tz=\"Europe/Vienna\"/>\n\
+\t<list of=\"obix:HistoryRecord\">\n\
+\t\t<obj>\n\
+\t\t\t<int name=\"count\" href=\"count\" val=\"1\"/>\n\
+\t\t\t<abstime name=\"start\" href=\"start\" val=\"2013-06-19t15:41:55.461+02:00\" tz=\"Europe/Vienna\"/>\n\
+\t\t\t<abstime name=\"end\" href=\"end\" val=\"2013-06-19t15:41:56.461+02:00\" tz=\"Europe/Vienna\"/>\n\
+\t\t\t<real name=\"min\" href=\"min\" val=\"300.0\"/>\n\
+\t\t\t<real name=\"max\" href=\"max\" val=\"300.0\"/>\n\
+\t\t\t<real name=\"avg\" href=\"avg\" val=\"300.0\"/>\n\
+\t\t\t<real name=\"sum\" href=\"sum\" val=\"300.0\"/>\n\
+\t\t</obj>\n\
+\t\t<obj>\n\
+\t\t\t<int name=\"count\" href=\"count\" val=\"1\"/>\n\
+\t\t\t<abstime name=\"start\" href=\"start\" val=\"2013-06-19T15:47:26.461+02:00\" tz=\"Europe/Vienna\"/>\n\
+\t\t\t<abstime name=\"end\" href=\"end\" val=\"2013-06-19T15:47:27.461+02:00\" tz=\"Europe/Vienna\"/>\n\
+\t\t\t<real name=\"min\" href=\"min\" val=\"450.0\"/>\n\
+\t\t\t<real name=\"max\" href=\"max\" val=\"450.0\"/>\n\
+\t\t\t<real name=\"avg\" href=\"avg\" val=\"450.0\"/>\n\
+\t\t\t<real name=\"sum\" href=\"sum\" val=\"450.0\"/>\n\
+\t\t</obj>\n\
+\t\t<obj>\n\
+\t\t\t<int name=\"count\" href=\"count\" val=\"1\"/>\n\
+\t\t\t<abstime name=\"start\" href=\"start\" val=\"2013-06-19T15:47:30.461+02:00\" tz=\"Europe/Vienna\"/>\n\
+\t\t\t<abstime name=\"end\" href=\"end\" val=\"2013-06-19T15:47:31.461+02:00\" tz=\"Europe/Vienna\"/>\n\
+\t\t\t<real name=\"min\" href=\"min\" val=\"500.0\"/>\n\
+\t\t\t<real name=\"max\" href=\"max\" val=\"500.0\"/>\n\
+\t\t\t<real name=\"avg\" href=\"avg\" val=\"500.0\"/>\n\
+\t\t\t<real name=\"sum\" href=\"sum\" val=\"500.0\"/>\n\
+\t\t</obj>\n\
+\t\t<obj>\n\
+\t\t\t<int name=\"count\" href=\"count\" val=\"1\"/>\n\
+\t\t\t<abstime name=\"start\" href=\"start\" val=\"2013-06-19T15:47:33.461+02:00\" tz=\"Europe/Vienna\"/>\n\
+\t\t\t<abstime name=\"end\" href=\"end\" val=\"2013-06-19T15:47:34.461+02:00\" tz=\"Europe/Vienna\"/>\n\
+\t\t\t<real name=\"min\" href=\"min\" val=\"650.0\"/>\n\
+\t\t\t<real name=\"max\" href=\"max\" val=\"650.0\"/>\n\
+\t\t\t<real name=\"avg\" href=\"avg\" val=\"650.0\"/>\n\
+\t\t\t<real name=\"sum\" href=\"sum\" val=\"650.0\"/>\n\
+\t\t</obj>\n\
+\t\t<obj>\n\
+\t\t\t<int name=\"count\" href=\"count\" val=\"1\"/>\n\
+\t\t\t<abstime name=\"start\" href=\"start\" val=\"2013-06-19T15:47:35.461+02:00\" tz=\"Europe/Vienna\"/>\n\
+\t\t\t<abstime name=\"end\" href=\"end\" val=\"2013-06-19T15:47:36.461+02:00\" tz=\"Europe/Vienna\"/>\n\
+\t\t\t<real name=\"min\" href=\"min\" val=\"1650.0\"/>\n\
+\t\t\t<real name=\"max\" href=\"max\" val=\"1650.0\"/>\n\
+\t\t\t<real name=\"avg\" href=\"avg\" val=\"1650.0\"/>\n\
+\t\t\t<real name=\"sum\" href=\"sum\" val=\"1650.0\"/>\n\
+\t\t</obj>\n\
+\t</list>\n\
+</obj>";
+  msg_size[RESOURCES_METER_POWER_HISTORY_ROLLUP][REST.type.APPLICATION_XML] = 2443;
+  msg[RESOURCES_METER_POWER_HISTORY_ROLLUP][REST.type.APPLICATION_EXI] = "historyex\0";
+  msg_size[RESOURCES_METER_POWER_HISTORY_ROLLUP][REST.type.APPLICATION_EXI] = 10;
+
+#if 0
   rest_activate_resource(&resource_meter_energy_history);
+  msg[RESOURCES_METER_ENERGY_HISTORY][REST.type.APPLICATION_XML] = "historyxm\0";
+  msg_size[RESOURCES_METER_ENERGY_HISTORY][REST.type.APPLICATION_XML] = 10;
+  msg[RESOURCES_METER_ENERGY_HISTORY][REST.type.APPLICATION_EXI] = "historyex\0";
+  msg_size[RESOURCES_METER_ENERGY_HISTORY][REST.type.APPLICATION_EXI] = 10;
+
   rest_activate_resource(&resource_meter_energy_history_query);
+  msg[RESOURCES_METER_ENERGY_HISTORY_QUERY][REST.type.APPLICATION_XML] = "historyxm\0";
+  msg_size[RESOURCES_METER_ENERGY_HISTORY_QUERY][REST.type.APPLICATION_XML] = 10;
+  msg[RESOURCES_METER_ENERGY_HISTORY_QUERY][REST.type.APPLICATION_EXI] = "historyex\0";
+  msg_size[RESOURCES_METER_ENERGY_HISTORY_QUERY][REST.type.APPLICATION_EXI] = 10;
+
   rest_activate_resource(&resource_meter_energy_history_rollup);
+  msg[RESOURCES_METER_ENERGY_HISTORY_ROLLUP][REST.type.APPLICATION_XML] = "historyxm\0";
+  msg_size[RESOURCES_METER_ENERGY_HISTORY_ROLLUP][REST.type.APPLICATION_XML] = 10;
+  msg[RESOURCES_METER_ENERGY_HISTORY_ROLLUP][REST.type.APPLICATION_EXI] = "historyex\0";
+  msg_size[RESOURCES_METER_ENERGY_HISTORY_ROLLUP][REST.type.APPLICATION_EXI] = 10;
+#endif /* 0 */
+
 #endif
 
   /* Define application-specific events here. */
