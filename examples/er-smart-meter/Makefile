@@ -1,4 +1,4 @@
-all: er-smart-meter
+all: er-smart-meter er-meter-client
 # Use this target explicitly if requried: er-plugtest-server
 
 CONTIKI=../..
