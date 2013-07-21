@@ -1,6 +1,4 @@
 Priority 0:
-* Smart-Meter: Set messages for endpoints
-** EXI
 * Smart-Meter: Implement Requester
 * HTTP Binding: Implement endpoints
 * HTTP Binding: Implement messages on endpoints

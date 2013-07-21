@@ -142,13 +142,8 @@ send_message(const char* message, const uint16_t size_msg, void* request, void* 
     *offset = -1;
   }
 
-#ifdef WITH_COAP
   REST.set_header_etag(response, (uint16_t *) &length, 1);
   REST.set_response_payload(response, buffer, length);
-#else
-  REST.set_header_etag(response, (uint8_t *) &length, 1);
-#endif /* WITH_COAP */
-
 }
 
 void
@@ -196,7 +191,15 @@ create_response(const char **message, uint8_t resource, void *request, void *res
 
   if (num && (accept[0]==REST.type.APPLICATION_XML || accept[0]==REST.type.APPLICATION_EXI) )
   {
-    *encoding = accept[0];
+    if (accept[0] == REST.type.APPLICATION_XML)
+    {
+      *encoding = ENCODING_XML;
+    }
+    else
+    {
+      *encoding = ENCODING_EXI;
+    }
+
     if ((*message = msg[resource][*encoding]) == NULL)
     {
       return ERR_ALLOC;
@@ -214,7 +217,7 @@ create_response(const char **message, uint8_t resource, void *request, void *res
 /********************/
 /* Resources ********/
 /********************/
-
+#if 0
 RESOURCE(meter, METHOD_GET, "smart-meter", "title=\"Hello meter: ?len=0..\";rt=\"Text\"");
 
 void
@@ -282,6 +285,7 @@ meter_power_history_handler(void* request, void* response, uint8_t *buffer, uint
   return;
 
 }
+#endif
 
 RESOURCE(meter_power_history_query, METHOD_GET, "smart-meter/power/history/query", "title=\"Hello meter_power: ?len=0..\";rt=\"Text\"");
 
@@ -496,6 +500,7 @@ PROCESS_THREAD(rest_server_example, ev, data)
   /* clear msg_size array to prevent programmer errors */
   memset(&msg_size[0][0], -1, RESOURCES_SIZE * NR_ENCODINGS * sizeof(uint16_t));
 
+#if 0
   rest_activate_resource(&resource_meter);
   msg[RESOURCES_METER][REST.type.APPLICATION_XML] = "value xml\0";
   msg_size[RESOURCES_METER][REST.type.APPLICATION_XML] = 10;
@@ -507,9 +512,10 @@ PROCESS_THREAD(rest_server_example, ev, data)
   msg_size[RESOURCES_METER_POWER_HISTORY][REST.type.APPLICATION_XML] = 10;
   msg[RESOURCES_METER_POWER_HISTORY][REST.type.APPLICATION_EXI] = "historyex\0";
   msg_size[RESOURCES_METER_POWER_HISTORY][REST.type.APPLICATION_EXI] = 10;
+#endif
 
   rest_activate_resource(&resource_meter_power_history_query);
-  msg[RESOURCES_METER_POWER_HISTORY_QUERY][REST.type.APPLICATION_XML] = "<obj is=\"obix:HistoryQueryOut\">\n\
+  msg[RESOURCES_METER_POWER_HISTORY_QUERY][ENCODING_XML] = "<obj is=\"obix:HistoryQueryOut\">\n\
 \t<int name=\"count\" href=\"count\" val=\"5\"/>\n\
 \t<abstime name=\"start\" href=\"start\" val=\"2013-06-19T15:41:56.133+02:00\" tz=\"Europe/Vienna\"/>\n\
 \t<abstime name=\"end\" href=\"end\" val=\"2013-06-19T15:47:35.950+02:00\" tz=\"Europe/Vienna\"/>\n\
@@ -536,8 +542,8 @@ PROCESS_THREAD(rest_server_example, ev, data)
 \t\t</obj>\n\
 \t</list>\n\
 </obj>";
-  msg_size[RESOURCES_METER_POWER_HISTORY_QUERY][REST.type.APPLICATION_XML] = 849;
-  msg[RESOURCES_METER_POWER_HISTORY_QUERY][REST.type.APPLICATION_EXI] = "\x80\x41\x1b\xd8\x9a\x94\x0d\xa5\xcc\x59\xbd\x89\xa5\xe0\xe9\x21\xa5\xcd\xd1\xbd\xc9\xe5\x45\xd5\x95\xc9\
+  msg_size[RESOURCES_METER_POWER_HISTORY_QUERY][ENCODING_XML] = 849;
+  msg[RESOURCES_METER_POWER_HISTORY_QUERY][ENCODING_EXI] = "\x80\x41\x1b\xd8\x9a\x94\x0d\xa5\xcc\x59\xbd\x89\xa5\xe0\xe9\x21\xa5\xcd\xd1\xbd\xc9\xe5\x45\xd5\x95\xc9\
   \xe5\x3d\xd5\xd3\x20\x8d\x2d\xce\x8a\x0a\xd0\xe4\xca\xcc\x0e\xc6\xde\xea\xdc\xe9\x50\x56\xe6\x16\xd6\x50\
   \x1c\xa0\x8e\xcc\x2d\x80\x66\xb9\x21\x0c\x2c\x4e\x6e\x8d\x2d\xac\xaa\x00\xc1\xdc\xdd\x18\x5c\x9d\x2a\x01\
   \x00\x79\x40\xdd\x1e\x83\xd1\x5d\x5c\x9b\xdc\x19\x4b\xd5\x9a\x59\x5b\x9b\x98\x75\x00\xa3\xe6\x46\x06\x26\
@@ -551,10 +557,10 @@ PROCESS_THREAD(rest_server_example, ev, data)
   \xc1\x59\x81\x91\xd1\x81\x80\x08\x39\xa9\x81\x81\x71\x80\xc1\x00\x11\xf3\x23\x03\x13\x32\xd3\x03\x62\xd3\
   \x13\x95\x43\x13\x53\xa3\x43\x73\xa3\x33\x32\xe3\x93\x23\x32\xb3\x03\x23\xa3\x03\x00\x10\x73\x63\x53\x02\
   \xe3\x01\x82\x00\x20\x04\x02\x10\x62\x6c\x6a\x60\x5c\x60\x35\x80";
-  msg_size[RESOURCES_METER_POWER_HISTORY_QUERY][REST.type.APPLICATION_EXI] = 354;
+  msg_size[RESOURCES_METER_POWER_HISTORY_QUERY][ENCODING_EXI] = 354;
 
   rest_activate_resource(&resource_meter_power_history_rollup);
-  msg[RESOURCES_METER_POWER_HISTORY_ROLLUP][REST.type.APPLICATION_XML] = "<obj is=\"obix:HistoryRollupOut\">\n\
+  msg[RESOURCES_METER_POWER_HISTORY_ROLLUP][ENCODING_XML] = "<obj is=\"obix:HistoryRollupOut\">\n\
 \t<int name=\"count\" href=\"count\" val=\"5\"/>\n\
 \t<abstime name=\"start\" href=\"start\" val=\"2013-06-19T15:40:59.461+02:00\" tz=\"Europe/Vienna\"/>\n\
 \t<abstime name=\"end\" href=\"end\" val=\"2013-06-19T15:48:06.584+02:00\" tz=\"Europe/Vienna\"/>\n\
@@ -606,8 +612,8 @@ PROCESS_THREAD(rest_server_example, ev, data)
 \t\t</obj>\n\
 \t</list>\n\
 </obj>";
-  msg_size[RESOURCES_METER_POWER_HISTORY_ROLLUP][REST.type.APPLICATION_XML] = 2443;
-  msg[RESOURCES_METER_POWER_HISTORY_ROLLUP][REST.type.APPLICATION_EXI] = "\x80\x41\x1b\xd8\x9a\x94\x0d\xa5\xcc\x5d\xbd\x89\xa5\xe0\xe9\x21\xa5\xcd\xd1\xbd\xc9\xe5\x49\xbd\xb1\xb1\
+  msg_size[RESOURCES_METER_POWER_HISTORY_ROLLUP][ENCODING_XML] = 2443;
+  msg[RESOURCES_METER_POWER_HISTORY_ROLLUP][ENCODING_EXI] = "\x80\x41\x1b\xd8\x9a\x94\x0d\xa5\xcc\x5d\xbd\x89\xa5\xe0\xe9\x21\xa5\xcd\xd1\xbd\xc9\xe5\x49\xbd\xb1\xb1\
   \xd5\xc1\x3d\xd5\xd3\x20\x8d\x2d\xce\x8a\x0a\xd0\xe4\xca\xcc\x0e\xc6\xde\xea\xdc\xe9\x50\x56\xe6\x16\xd6\
   \x50\x1c\xa0\x8e\xcc\x2d\x80\x66\xb9\x21\x0c\x2c\x4e\x6e\x8d\x2d\xac\xaa\x00\xc1\xdc\xdd\x18\x5c\x9d\x2a\
   \x01\x00\x79\x40\xdd\x1e\x83\xd1\x5d\x5c\x9b\xdc\x19\x4b\xd5\x9a\x59\x5b\x9b\x98\x75\x00\xa3\xe6\x46\x06\
@@ -637,7 +643,7 @@ PROCESS_THREAD(rest_server_example, ev, data)
   \x00\x4c\x04\xc8\x00\x8f\x99\x18\x18\x99\x96\x98\x1b\x16\x98\x9c\xaa\x18\x9a\x9d\x1a\x1b\x9d\x19\x9b\x17\
   \x1a\x1b\x18\x95\x98\x19\x1d\x18\x18\x00\xc0\x1a\x01\x61\x08\x31\x36\x35\x30\x2e\x30\x01\x80\x44\x02\xe2\
   \x01\x20\x18\x05\x40\x2f\x20\x12\x01\x80\x64\x03\x02\x01\x20\xd6";
-  msg_size[RESOURCES_METER_POWER_HISTORY_ROLLUP][REST.type.APPLICATION_EXI] = 770;
+  msg_size[RESOURCES_METER_POWER_HISTORY_ROLLUP][ENCODING_EXI] = 770;
 
 #if 0
   rest_activate_resource(&resource_meter_energy_history);
