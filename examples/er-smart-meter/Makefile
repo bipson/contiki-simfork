@@ -13,7 +13,7 @@ UIP_CONF_IPV6=1
 
 # variable for this Makefile
 # configure CoAP implementation (3|7) (er-coap-07 also supports CoAP draft 08)
-WITH_COAP=0
+WITH_COAP=7
 
 # new variable since slip-radio
 ifneq ($(TARGET), minimal-net)
