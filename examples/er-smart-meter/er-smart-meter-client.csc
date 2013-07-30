@@ -46,7 +46,7 @@
       <description>smart-meter</description>
       <source EXPORT="discard">[CONTIKI_DIR]/examples/er-smart-meter/er-smart-meter.c</source>
       <commands EXPORT="discard">make er-smart-meter.z1 TARGET=z1</commands>
-      <firmware EXPORT="copy">/home/user/contiki/examples/er-smart-meter/er-smart-meter.z1</firmware>
+      <firmware EXPORT="copy">[CONTIKI_DIR]/examples/er-smart-meter/er-smart-meter.z1</firmware>
       <moteinterface>se.sics.cooja.interfaces.Position</moteinterface>
       <moteinterface>se.sics.cooja.interfaces.RimeAddress</moteinterface>
       <moteinterface>se.sics.cooja.interfaces.IPAddress</moteinterface>
@@ -84,8 +84,8 @@
       <breakpoints />
       <interface_config>
         se.sics.cooja.interfaces.Position
-        <x>66.36759744782013</x>
-        <y>50.23800059370484</y>
+        <x>65.3641631840434</x>
+        <y>49.95362857728934</y>
         <z>0.0</z>
       </interface_config>
       <interface_config>
@@ -98,8 +98,8 @@
       <breakpoints />
       <interface_config>
         se.sics.cooja.interfaces.Position
-        <x>87.40233167075664</x>
-        <y>32.783646664034116</y>
+        <x>87.13620714971141</x>
+        <y>32.584919346250814</y>
         <z>0.0</z>
       </interface_config>
       <interface_config>
@@ -112,8 +112,8 @@
       <breakpoints />
       <interface_config>
         se.sics.cooja.interfaces.Position
-        <x>96.6501509352708</x>
-        <y>56.839501824858054</y>
+        <x>94.47509837409389</x>
+        <y>53.13381477452174</y>
         <z>0.0</z>
       </interface_config>
       <interface_config>
@@ -140,10 +140,10 @@
       <skin>se.sics.cooja.plugins.skins.AttributeVisualizerSkin</skin>
       <skin>se.sics.cooja.plugins.skins.LEDVisualizerSkin</skin>
       <skin>se.sics.cooja.plugins.skins.AddressVisualizerSkin</skin>
-      <viewport>8.476484811945749 0.0 0.0 8.476484811945749 -417.2535364750873 -262.79917393697195</viewport>
+      <viewport>4.087810962550999 0.0 0.0 4.087810962550999 -69.19634282170504 -38.2009905174442</viewport>
     </plugin_config>
     <width>522</width>
-    <z>1</z>
+    <z>4</z>
     <height>397</height>
     <location_x>10</location_x>
     <location_y>256</location_y>
@@ -155,10 +155,10 @@
       <coloring />
     </plugin_config>
     <width>816</width>
-    <z>2</z>
+    <z>1</z>
     <height>341</height>
-    <location_x>589</location_x>
-    <location_y>11</location_y>
+    <location_x>606</location_x>
+    <location_y>7</location_y>
   </plugin>
   <plugin>
     se.sics.cooja.plugins.RadioLogger
@@ -166,11 +166,11 @@
       <split>150</split>
       <analyzers name="6lowpan" />
     </plugin_config>
-    <width>451</width>
-    <z>3</z>
-    <height>305</height>
-    <location_x>948</location_x>
-    <location_y>358</location_y>
+    <width>808</width>
+    <z>2</z>
+    <height>614</height>
+    <location_x>513</location_x>
+    <location_y>147</location_y>
   </plugin>
   <plugin>
     se.sics.cooja.plugins.TimeLine
@@ -183,10 +183,10 @@
       <showLEDs />
       <showWatchpoints />
       <split>125</split>
-      <zoomfactor>25.49079397896416</zoomfactor>
+      <zoomfactor>20000.0</zoomfactor>
     </plugin_config>
     <width>1392</width>
-    <z>5</z>
+    <z>3</z>
     <height>249</height>
     <location_x>-2</location_x>
     <location_y>666</location_y>
@@ -195,7 +195,7 @@
     SerialSocketServer
     <mote_arg>0</mote_arg>
     <width>422</width>
-    <z>4</z>
+    <z>5</z>
     <height>87</height>
     <location_x>137</location_x>
     <location_y>159</location_y>

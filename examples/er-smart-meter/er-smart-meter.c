@@ -45,7 +45,6 @@
 #include "sys/rtimer.h"
 #include "contiki.h"
 #include "contiki-net.h"
-#include "random.h"
 #if STATIC_ROUTING
 #warning "Compiling with static routing!"
 #include "static-routing.h"
