@@ -1,11 +1,13 @@
 Priority 0:
-* Smart-Meter: Implement Requester
-* HTTP Binding: Implement endpoints
-* HTTP Binding: Implement messages on endpoints
+* Wechsel zu sky-mote
+* Erste Szenarien simulieren (maximale Nodes?)
+* Schnittstellen für Power Verbrauch
 
 Priority 1:
 * CoAP Observe: Implement chunked messages
 * Get "values" from Cooja
+* HTTP Binding: Implement endpoints
+* HTTP Binding: Implement messages on endpoints
 * Integrate Contiki/CoAP into OMNET++
 
 Priority 2:
