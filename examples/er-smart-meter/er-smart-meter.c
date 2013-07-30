@@ -93,6 +93,8 @@ static uint16_t msg_size[RESOURCES_SIZE][NR_ENCODINGS];
 void
 send_message(const char* message, const uint16_t size_msg, void* request, void* response, uint8_t *buffer, int32_t *offset)
 {
+  PRINTF("Send Message: Size = %d, Offset = %d\n", size_msg, *offset);
+
   uint16_t length;
   char *err_msg;
   const char* len;
@@ -101,12 +103,10 @@ send_message(const char* message, const uint16_t size_msg, void* request, void* 
 
   if (length <= 0)
   {
-#ifdef WITH_COAP
     PRINTF("AHOYHOY?!\n");
     REST.set_response_status(response, REST.status.INTERNAL_SERVER_ERROR);
     err_msg = "calculation of message length error, this should not happen :\\";
     REST.set_response_payload(response, err_msg, strlen(err_msg));
-#endif /*WITH_COAP*/
     return;
   }
 
@@ -313,8 +313,6 @@ meter_power_history_query_handler(void* request, void* response, uint8_t *buffer
     size_msg = message_size;
   }
 
-  PRINTF("Will send message: %s\n", meter_message);
-  PRINTF("Encoding: %d\n", acc_encoding);
   send_message(meter_message, size_msg, request, response, buffer, offset);
   return;
 }
@@ -346,8 +344,6 @@ meter_power_history_rollup_handler(void* request, void* response, uint8_t *buffe
     size_msg = message_size;
   }
 
-  PRINTF("Will send message: %s\n", meter_message);
-  PRINTF("Encoding: %d\n", acc_encoding);
   PRINTF("Size: %d\n", size_msg);
   send_message(meter_message, size_msg, request, response, buffer, offset);
   return;

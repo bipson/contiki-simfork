@@ -1,7 +1,6 @@
 Priority 0:
-* Wechsel zu sky-mote
-* Erste Szenarien simulieren (maximale Nodes?)
-* Schnittstellen für Power Verbrauch
+* Simulations
+* Add IF for power-meas / collect-view
 
 Priority 1:
 * CoAP Observe: Implement chunked messages

@@ -75,7 +75,8 @@
 #endif
 
 /* TODO: This server address is hard-coded for Cooja. */
-#define SERVER_NODE(ipaddr)   uip_ip6addr(ipaddr, 0xaaaa, 0, 0, 0, 0xc30c, 0x0, 0x0, 0x0002) /* cooja2 */
+//#define SERVER_NODE(ipaddr)   uip_ip6addr(ipaddr, 0xaaaa, 0, 0, 0, 0x202, 0x2, 0x2, 0x2) /* cooja2 */
+#define SERVER_NODE(ipaddr)   uip_ip6addr(ipaddr, 0xaaaa, 0, 0, 0, 0xc30c, 0x0, 0x0, 0x002) /* cooja2 */
 
 #define LOCAL_PORT      UIP_HTONS(COAP_DEFAULT_PORT+1)
 #define REMOTE_PORT     UIP_HTONS(COAP_DEFAULT_PORT)
@@ -158,7 +159,7 @@ PROCESS_THREAD(coap_client_example, ev, data)
 
       coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0);
       coap_set_header_uri_path(request, service_urls[uri_switch+1]);
-      coap_set_header_accept(request, encodings[uri_switch]);
+      coap_set_header_accept(request, encodings[uri_switch+1]);
 
       printf("--Requesting %s--\n", service_urls[uri_switch]);
 
@@ -170,9 +171,9 @@ PROCESS_THREAD(coap_client_example, ev, data)
       printf("\n--Done--\n");
 
       //uri_switch = (uri_switch+1) % NUMBER_OF_URLS;
+    }
 #endif
 
-    }
   }
 
   PROCESS_END();
