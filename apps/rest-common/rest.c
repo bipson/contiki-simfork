@@ -179,6 +179,16 @@ rest_get_post_variable(REQUEST* request, const char *name, char* output, uint16_
 }
 
 content_type_t
+rest_get_header_accept(REQUEST* request)
+{
+#ifdef WITH_COAP
+  return 0;
+#else
+  return http_get_header_accept(request);
+#endif /*WITH_COAP*/
+}
+
+content_type_t
 rest_get_header_content_type(REQUEST* request)
 {
 #ifdef WITH_COAP
