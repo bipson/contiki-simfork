@@ -38,7 +38,6 @@ extern const char* HTTP_HEADER_NAME_SERVER;
 extern const char* HTTP_HEADER_NAME_HOST;
 extern const char* HTTP_HEADER_NAME_IF_NONE_MATCH;
 extern const char* HTTP_HEADER_NAME_ETAG;
-extern const char* HTTP_HEADER_NAME_ACCEPT;
 
 extern const char* header_delimiter;
 

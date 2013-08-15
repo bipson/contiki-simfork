@@ -122,10 +122,7 @@ static const char* is_request_hdr_needed(const char* header_name)
     header = HTTP_HEADER_NAME_CONTENT_LENGTH;
   } else if (strcmp(header_name, HTTP_HEADER_NAME_CONTENT_TYPE) == 0) {
     header = HTTP_HEADER_NAME_CONTENT_TYPE;
-  } else if (strcmp(header_name, HTTP_HEADER_NAME_ACCEPT) == 0) {
-    header = HTTP_HEADER_NAME_ACCEPT;
   }
-
 
   return header;
 }
@@ -373,22 +370,6 @@ get_header(http_header_t* headers, const char* hdr_name)
 const char* http_get_req_header(http_request_t* request, const char* name)
 {
   return get_header(request->headers, name);
-}
-
-content_type_t http_get_header_accept(http_request_t* request)
-{
-  const char* content_type_string = http_get_req_header(request, HTTP_HEADER_NAME_ACCEPT);
-  if (content_type_string) {
-    int i = 0;
-    for(; i < sizeof(content_types)/sizeof(const char*) ; i++) {
-      if (strncmp(content_types[i], content_type_string, strlen(content_types[i])) == 0) {
-        return (content_type_t)i;
-      }
-    }
-  }
-
-  return UNKNOWN_CONTENT_TYPE;
-  
 }
 
 content_type_t http_get_header_content_type(http_request_t* request)

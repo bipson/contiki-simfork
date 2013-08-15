@@ -132,11 +132,6 @@ void rest_set_method_type(REQUEST* request, method_t method);
 content_type_t rest_get_header_content_type(REQUEST* request);
 
 /*
- * Getter for the request accept type
- */
-content_type_t rest_get_header_accept(REQUEST* request);
-
-/*
  * Setter for the response content type
  */
 int rest_set_header_content_type(RESPONSE* response, content_type_t content_type);
