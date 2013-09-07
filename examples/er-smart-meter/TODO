@@ -1,16 +1,14 @@
 Priority 0:
 * Simulations
-* Add IF for power-meas / collect-view
+* Get "values" from Cooja
+** Find out which values we can collect
+* CoAP Observe: Implement chunked messages
 
 Priority 1:
-* CoAP Observe: Implement chunked messages
-* Get "values" from Cooja
-* HTTP Binding: Implement endpoints
-* HTTP Binding: Implement messages on endpoints
 * Integrate Contiki/CoAP into OMNET++
 
 Priority 2:
-* Contiki: fixed routing?
+* Contiki: static routes?
 
 Won't Fix:
 * CoAP Observe: Content Type of Requester not fixed (shortcoming of erbium)

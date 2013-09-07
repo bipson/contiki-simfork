@@ -1,40 +1,48 @@
 all: er-smart-meter er-meter-client
 # Use this target explicitly if requried: er-plugtest-server
 
-CONTIKI=../..
-CFLAGS += -DPROJECT_CONF_H=\"project-conf.h\"
+# variable for this Makefile
+# configure CoAP implementation (3|7|12|13) (er-coap-07 also supports CoAP draft 08)
+WITH_COAP=13
 
-PROJECT_SOURCEFILES += static-routing.c 
-
-# variable for root Makefile.include
+# variable for Makefile.include
 WITH_UIP6=1
 # for some platforms
 UIP_CONF_IPV6=1
+# IPv6 make config disappeared completely
+CFLAGS += -DUIP_CONF_IPV6=1
 
-# variable for this Makefile
-# configure CoAP implementation (3|7) (er-coap-07 also supports CoAP draft 08)
-WITH_COAP=7
+CONTIKI=../..
+CFLAGS += -DPROJECT_CONF_H=\"project-conf.h\"
 
-# new variable since slip-radio
+# variable for Makefile.include
 ifneq ($(TARGET), minimal-net)
-UIP_CONF_RPL=1
+CFLAGS += -DUIP_CONF_IPV6_RPL=1
 else
 # minimal-net does not support RPL under Linux and is mostly used to test CoAP only
-${info INFO: compiling without RPL}
-UIP_CONF_RPL=0
-CFLAGS += -DUIP_CONF_ND6_DEF_MAXDADNS=0
-CFLAGS += -DHARD_CODED_ADDRESS=\"fdfd::10\"
-CFLAGS += -DUIP_CONF_BUFFER_SIZE=1280
-endif
+  ${info INFO: compiling without RPL}
+  CFLAGS += -DUIP_CONF_IPV6_RPL=0
+  CFLAGS += -DHARD_CODED_ADDRESS=\"fdfd::10\"
+  ${info INFO: compiling with large buffers}
+  CFLAGS += -DUIP_CONF_BUFFER_SIZE=2048
+  CFLAGS += -DREST_MAX_CHUNK_SIZE=1024
+  CFLAGS += -DCOAP_MAX_HEADER_SIZE=640
+  endif
 
-UIP_CONF_RPL=0
-DEBUG = DEBUG_FULL
+# for collect-view
+COLLECT=1
 
 # linker optimizations
 SMALL=1
 
 # REST framework, requires WITH_COAP
-ifeq ($(WITH_COAP), 7)
+ifeq ($(WITH_COAP), 13)
+${info INFO: compiling with CoAP-13}
+CFLAGS += -DWITH_COAP=13
+CFLAGS += -DREST=coap_rest_implementation
+CFLAGS += -DUIP_CONF_TCP=0
+APPS += er-coap-13
+else ifeq ($(WITH_COAP), 7)
 ${info INFO: compiling with CoAP-08}
 CFLAGS += -DWITH_COAP=7
 CFLAGS += -DREST=coap_rest_implementation
@@ -55,6 +63,10 @@ APPS += er-http-engine
 endif
 
 APPS += erbium
+ifeq ($(COLLECT), 1)
+CFLAGS += -DCOLLECT
+APPS += powertrace
+endif #COLLECT
 
 # optional rules to get assembly
 #CUSTOM_RULE_C_TO_OBJECTDIR_O = 1

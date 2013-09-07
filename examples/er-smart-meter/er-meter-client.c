@@ -58,6 +58,8 @@
 #include "er-coap-06-engine.h"
 #elif WITH_COAP == 7
 #include "er-coap-07-engine.h"
+#elif WITH_COAP == 13
+#include "er-coap-13-engine.h"
 #else
 #error "CoAP version defined by WITH_COAP not implemented"
 #endif

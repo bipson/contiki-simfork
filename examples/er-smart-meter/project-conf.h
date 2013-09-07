@@ -36,17 +36,11 @@
 
 #define STATIC_ROUTING  0
 
-#define SEC_BUFF_SIZE     600
-#define MIN_BUFF_SIZE     10
-#define MINX10_BUFF_SIZE  144
-
-#define MIN(a,b) (((a) > (b)) ? (b) : (a))
-#define MAX(a,b) (((a) > (b)) ? (a) : (b))
-
 /* Disabling RDC for demo purposes. Core updates often require more memory. */
 /* For projects, optimize memory and enable RDC again. */
 #undef NETSTACK_CONF_RDC
-#define NETSTACK_CONF_RDC     nullrdc_driver
+//#define NETSTACK_CONF_RDC     nullrdc_driver
+#define NETSTACK_CONF_RDC     contikimac_driver
 
 /* Save some memory for the sky platform. */
 #undef UIP_CONF_DS6_NBR_NBU

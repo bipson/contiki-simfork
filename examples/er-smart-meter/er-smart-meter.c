@@ -38,13 +38,20 @@
  *      Matthias Kovatsch <kovatsch@inf.ethz.ch>
  */
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#if 0
 #include "sys/clock.h"
 #include "sys/rtimer.h"
+#endif
 #include "contiki.h"
 #include "contiki-net.h"
+
+#if COLLECT
+#warning "Compiling with powertrace!"
+#include "powertrace.h"
+#endif /* COLLECT */
+
 #if STATIC_ROUTING
 #warning "Compiling with static routing!"
 #include "static-routing.h"
@@ -54,7 +61,10 @@
 #define REST_RES_METER 1
 
 #include "erbium.h"
+#ifndef COLLECT
 #include "er-smart-meter.h"
+#endif
+
 
 /* For CoAP-specific example: not required for normal RESTful Web service. */
 #if WITH_COAP == 3
@@ -69,7 +79,7 @@
 #warning "Erbium example without CoAP-specifc functionality"
 #endif /* CoAP-specific example */
 
-#define DEBUG 1
+#define DEBUG 0
 #if DEBUG
 #define PRINTF(...) printf(__VA_ARGS__)
 #define PRINT6ADDR(addr) PRINTF("[%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x]", ((uint8_t *)addr)[0], ((uint8_t *)addr)[1], ((uint8_t *)addr)[2], ((uint8_t *)addr)[3], ((uint8_t *)addr)[4], ((uint8_t *)addr)[5], ((uint8_t *)addr)[6], ((uint8_t *)addr)[7], ((uint8_t *)addr)[8], ((uint8_t *)addr)[9], ((uint8_t *)addr)[10], ((uint8_t *)addr)[11], ((uint8_t *)addr)[12], ((uint8_t *)addr)[13], ((uint8_t *)addr)[14], ((uint8_t *)addr)[15])
@@ -81,15 +91,21 @@
 #endif
 
 #if REST_RES_METER
+#ifdef COLLECT
+#else
 static char *msg[RESOURCES_SIZE][NR_ENCODINGS];
 static uint16_t msg_size[RESOURCES_SIZE][NR_ENCODINGS];
+#endif /* COLLECT */
 
-#define CHUNKS_TOTAL    4096
+#define CHUNKS_TOTAL    128
+//#define CHUNKS_TOTAL    4096
+//#define CHUNKS_TOTAL    8
 
 /********************/
 /* helper functions */
 /********************/
 
+#ifndef COLLECT
 void
 send_message(const char* message, const uint16_t size_msg, void* request, void* response, uint8_t *buffer, int32_t *offset)
 {
@@ -105,7 +121,7 @@ send_message(const char* message, const uint16_t size_msg, void* request, void* 
   {
     PRINTF("AHOYHOY?!\n");
     REST.set_response_status(response, REST.status.INTERNAL_SERVER_ERROR);
-    err_msg = "calculation of message length error, this should not happen :\\";
+    err_msg = "calculation of message length error";
     REST.set_response_payload(response, err_msg, strlen(err_msg));
     return;
   }
@@ -212,16 +228,17 @@ create_response(const char **message, uint8_t resource, void *request, void *res
     return ERR_WRONGCONTENTTYPE;
   }
 }
+#endif /* !COLLECT */
 
 /********************/
 /* Resources ********/
 /********************/
-#if 0
 RESOURCE(meter, METHOD_GET, "smart-meter", "title=\"Hello meter: ?len=0..\";rt=\"Text\"");
 
 void
 meter_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset)
 {
+#ifndef COLLECT
   PRINTF("\nMeter handler called\n");
   /* we save the message as static variable, so it is retained through multiple calls (chunked resource) */
   static const char *meter_message;
@@ -248,9 +265,29 @@ meter_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred
   PRINTF("Encoding: %d\n", acc_encoding);
   PRINTF("Size: %d\n", size_msg);
   send_message(meter_message, size_msg, request, response, buffer, offset);
+#else
+  const char *len = NULL;
+  /* Some data that has the length up to REST_MAX_CHUNK_SIZE. For more, see the chunk resource. */
+  char *message = "value xml";
+  int length = 9;
+  /* The query string can be retrieved by rest_get_query() or parsed for its key-value pairs. */
+  if (REST.get_query_variable(request, "len", &len)) {
+    length = atoi(len);
+    if (length<0) length = 0;
+    if (length>REST_MAX_CHUNK_SIZE) length = REST_MAX_CHUNK_SIZE;
+    memcpy(buffer, message, length);
+  } else {
+    memcpy(buffer, message, length);
+  }
+
+  REST.set_header_content_type(response, REST.type.APPLICATION_XML); /* text/plain is the default, hence this option could be omitted. */
+  REST.set_header_etag(response, (uint8_t *) &length, 1);
+  REST.set_response_payload(response, buffer, length);
+#endif /* !COLLECT */
   return;
 }
 
+#if 0
 RESOURCE(meter_power_history, METHOD_GET, "smart-meter/power/history", "title=\"Hello meter_power: ?len=0..\";rt=\"Text\"");
 
 void
@@ -284,7 +321,6 @@ meter_power_history_handler(void* request, void* response, uint8_t *buffer, uint
   return;
 
 }
-#endif
 
 RESOURCE(meter_power_history_query, METHOD_GET, "smart-meter/power/history/query", "title=\"Hello meter_power: ?len=0..\";rt=\"Text\"");
 
@@ -349,7 +385,6 @@ meter_power_history_rollup_handler(void* request, void* response, uint8_t *buffe
   return;
 }
 
-#if 0
 RESOURCE(meter_energy_history, METHOD_GET, "smart-meter/energy/history", "title=\"Hello meter_energy: ?len=0..\";rt=\"Text\"");
 
 void
@@ -452,13 +487,13 @@ meter_energy_history_rollup_handler(void* request, void* response, uint8_t *buff
 
 #endif
 
-PROCESS(rest_server_example, "Erbium Example Server");
+PROCESS(rest_server_example, "E");
 AUTOSTART_PROCESSES(&rest_server_example);
 
 PROCESS_THREAD(rest_server_example, ev, data)
 {
   PROCESS_BEGIN();
-
+#ifndef COLLECT
   PRINTF("Starting Erbium Example Server\n");
 
 #ifdef RF_CHANNEL
@@ -474,16 +509,11 @@ PROCESS_THREAD(rest_server_example, ev, data)
   PRINTF("REST max chunk: %u\n", REST_MAX_CHUNK_SIZE);
 
   /* if static routes are used rather than RPL */
-#if 0
   #if STATIC_ROUTING
     set_global_address();
     configure_routing();
   #endif
-#endif
-
-  #if STATIC_ROUTING
-    configure_routing();
-  #endif
+#endif /* !COLLECT */
 
   /* Initialize the REST engine. */
   rest_init_engine();
@@ -492,13 +522,18 @@ PROCESS_THREAD(rest_server_example, ev, data)
 
 #if REST_RES_METER
 
+#if 0
   /* clear msg_size array to prevent programmer errors */
   memset(&msg_size[0][0], -1, RESOURCES_SIZE * NR_ENCODINGS * sizeof(uint16_t));
+#endif
 
-#if 0
   rest_activate_resource(&resource_meter);
+#ifdef COLLECT
+#else
   msg[RESOURCES_METER][REST.type.APPLICATION_XML] = "value xml\0";
-  msg_size[RESOURCES_METER][REST.type.APPLICATION_XML] = 10;
+  msg_size[RESOURCES_METER][REST.type.APPLICATION_XML] = 9;
+#endif /* !COLLECT */
+#if 0
   msg[RESOURCES_METER][REST.type.APPLICATION_EXI] = "value exi\0";
   msg_size[RESOURCES_METER][REST.type.APPLICATION_EXI] = 10;
 
@@ -507,7 +542,6 @@ PROCESS_THREAD(rest_server_example, ev, data)
   msg_size[RESOURCES_METER_POWER_HISTORY][REST.type.APPLICATION_XML] = 10;
   msg[RESOURCES_METER_POWER_HISTORY][REST.type.APPLICATION_EXI] = "historyex\0";
   msg_size[RESOURCES_METER_POWER_HISTORY][REST.type.APPLICATION_EXI] = 10;
-#endif
 
   rest_activate_resource(&resource_meter_power_history_query);
   msg[RESOURCES_METER_POWER_HISTORY_QUERY][ENCODING_XML] = "<obj is=\"obix:HistoryQueryOut\">\n\
@@ -639,6 +673,7 @@ PROCESS_THREAD(rest_server_example, ev, data)
   \x1a\x1b\x18\x95\x98\x19\x1d\x18\x18\x00\xc0\x1a\x01\x61\x08\x31\x36\x35\x30\x2e\x30\x01\x80\x44\x02\xe2\
   \x01\x20\x18\x05\x40\x2f\x20\x12\x01\x80\x64\x03\x02\x01\x20\xd6";
   msg_size[RESOURCES_METER_POWER_HISTORY_ROLLUP][ENCODING_EXI] = 770;
+#endif
 
 #if 0
   rest_activate_resource(&resource_meter_energy_history);
@@ -661,6 +696,10 @@ PROCESS_THREAD(rest_server_example, ev, data)
 #endif /* 0 */
 
 #endif
+
+#if COLLECT
+  powertrace_start(CLOCK_SECOND * 10);
+#endif /* COLLECT */
 
   /* Define application-specific events here. */
   while(1) {
