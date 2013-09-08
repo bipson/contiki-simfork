@@ -1,14 +1,13 @@
 all: rest-server-example 
 #coap-client-example
 
-ifndef TARGET
-TARGET=sky
-endif
-
 CONTIKI=../..
+
+POWERTRACE=0
 
 WITH_UIP6=1
 UIP_CONF_IPV6=1
+UIP_CONF_RPL=1
 
 WITH_COAP = 0
 
@@ -20,6 +19,11 @@ APPS += rest-coap
 else
 CFLAGS += -DWITH_HTTP
 APPS += rest-http
+endif
+
+ifeq ($(POWERTRACE), 1)
+CFLAGS += -DPOWERTRACE
+APPS += powertrace
 endif
 
 include $(CONTIKI)/Makefile.include

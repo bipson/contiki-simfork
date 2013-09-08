@@ -1,9 +1,11 @@
 all: er-smart-meter er-meter-client
 # Use this target explicitly if requried: er-plugtest-server
 
+#PROJECT_SOURCEFILES += static-routing.c 
+
 # variable for this Makefile
 # configure CoAP implementation (3|7|12|13) (er-coap-07 also supports CoAP draft 08)
-WITH_COAP=13
+WITH_COAP=7
 
 # variable for Makefile.include
 WITH_UIP6=1
@@ -30,7 +32,7 @@ else
   endif
 
 # for collect-view
-COLLECT=1
+COLLECT=0
 
 # linker optimizations
 SMALL=1

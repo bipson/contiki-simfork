@@ -5,14 +5,20 @@
 #include "contiki-net.h"
 #include "rest.h"
 
+#ifdef POWERTRACE
+#include "powertrace.h"
+#endif /* POWERTRACE */
+
 #define REST_RES_METER 1
 #define REST_RES_HELLOWORLD 0
 
 #if REST_RES_METER
+#ifndef POWERTRACE
 #include "rest-server-example.h"
+#endif /* POWERTRACE */
 #endif /* REST_RES_METER */
 
-#define DEBUG 1
+#define DEBUG 0
 #if DEBUG
 #include <stdio.h>
 #define PRINTF(...) printf(__VA_ARGS__)
@@ -25,12 +31,15 @@
 #endif
 
 #if REST_RES_METER
-static char *msg[RESOURCES_SIZE][NR_ENCODINGS];
-static uint16_t msg_size[RESOURCES_SIZE][NR_ENCODINGS];
+#ifndef POWERTRACE 
+static char *msg[RESOURCES_SIZE];
+static uint16_t msg_size[RESOURCES_SIZE];
+#endif /* !(POWERTRACE) */
 
 /********************/
 /* helper functions */
 /********************/
+#ifndef POWERTRACE
 void
 set_error_response(void* response, int8_t error_code)
 {
@@ -41,10 +50,6 @@ set_error_response(void* response, int8_t error_code)
     case ERR_BLOCKOUTOFSCOPE:
       /* A block error message should not exceed the minimum block size (16). */
       err_msg = "BlockOutOfScope";
-      break;
-    case ERR_WRONGCONTENTTYPE:
-      PRINTF("wrong content-type!\n");
-      err_msg = "Supporting content-types application/xml and application/exi";
       break;
     case ERR_ALLOC:
       PRINTF("ERROR while creating message!\n");
@@ -61,38 +66,16 @@ set_error_response(void* response, int8_t error_code)
 }
 
 int16_t
-create_response(const char **message, uint8_t resource, void *request, void *response, int8_t *encoding)
+create_response(const char **message, uint8_t resource, void *request, void *response)
 {
-  content_type_t accept = 0;
-
-  /* decide upon content-format */
-  accept = rest_get_header_accept(request);
-  
-  if (accept==APPLICATION_XML || accept==APPLICATION_EXI)
+  if ((*message = msg[resource]) == NULL)
   {
-    if (accept == APPLICATION_XML)
-    {
-      *encoding = ENCODING_XML;
-    }
-    else
-    {
-      *encoding = ENCODING_EXI;
-    }
-
-    if ((*message = msg[resource][*encoding]) == NULL)
-    {
-      return ERR_ALLOC;
-    }
-    rest_set_header_content_type(response, *encoding);
-    PRINTF("size found: %d\n", msg_size[resource][*encoding]);
-    PRINTF("text found: %s\n", msg[resource][*encoding]);
-    return msg_size[resource][*encoding];
+    return ERR_ALLOC;
   }
-  else
-  {
-    return ERR_WRONGCONTENTTYPE;
-  }
+  rest_set_header_content_type(response, TEXT_PLAIN);
+  return msg_size[resource];
 }
+#endif /* !(POWERTRACE) */
 
 /********************/
 /* Resources ********/
@@ -102,12 +85,12 @@ RESOURCE(meter, METHOD_GET, "smart-meter");
 void
 meter_handler(REQUEST* request, RESPONSE* response)
 {
-  int8_t acc_encoding = -1;
+#ifndef POWERTRACE
   int8_t message_size = -1;
   const char *meter_message;
 
   PRINTF("Will create response\n");
-  if ((message_size = create_response(&meter_message, RESOURCES_METER, request, response, &acc_encoding)) <= 0)
+  if ((message_size = create_response(&meter_message, RESOURCES_METER, request, response)) <= 0)
   {
     PRINTF("Error caught: %d\n", message_size);
     set_error_response(response, message_size);
@@ -115,8 +98,11 @@ meter_handler(REQUEST* request, RESPONSE* response)
   }
 
   PRINTF("Will send message: %s\n", meter_message);
-  PRINTF("Encoding: %d\n", acc_encoding);
   PRINTF("Size: %d\n", message_size);
+#else
+  const char *meter_message = "value_xml";
+  uint8_t message_size = 9;
+#endif /* !(POWERTRACE) */
   rest_set_response_payload(response, (uint8_t*)meter_message, message_size);
   return;
 }
@@ -149,7 +135,7 @@ discover_handler(REQUEST* request, RESPONSE* response)
   int index = 0;
 
 #if REST_RES_METER
-  index += sprintf(temp + index, "%s,", "</meter>;n=\"SmartMeter\"");
+  index += sprintf(temp + index, "%s,", "</smart-meter>;n=\"SmartMeter\"");
 #endif /* REST_RES_METER */
 #if REST_RES_HELLOWORLD
   index += sprintf(temp + index, "%s,", "</helloworld>;n=\"HelloWorld\"");
@@ -166,6 +152,10 @@ PROCESS_THREAD(rest_server_example, ev, data)
 {
   PROCESS_BEGIN();
 
+#ifdef POWERTRACE
+  powertrace_start(CLOCK_SECOND * 5);
+#endif /* POWERTRACE */
+
 #ifdef WITH_COAP
   PRINTF("COAP Server\n");
 #else
@@ -176,15 +166,19 @@ PROCESS_THREAD(rest_server_example, ev, data)
 
 #if REST_RES_METER
   rest_activate_resource(&resource_meter);
-  msg[RESOURCES_METER][ENCODING_XML] = "value xml\0";
-  msg_size[RESOURCES_METER][ENCODING_XML] = 9;
+#ifndef POWERTRACE
+  msg[RESOURCES_METER] = "value xml\0";
+  msg_size[RESOURCES_METER] = 9;
+#endif /* !(POWERTRACE) */
 #endif /* REST_RES_METER */
   
 #if REST_RES_HELLOWORLD
   rest_activate_resource(&resource_helloworld);
 #endif /* REST_RES_HELLOWORLD */
 
+#ifndef POWERTRACE
   rest_activate_resource(&resource_discover);
+#endif /* !(POWERTRACE) */
 
   PROCESS_END();
 }

@@ -1,6 +1,7 @@
 #ifndef REST_SMART_METER_H
 #define REST_SMART_METER_H
 
+#if !(POWERTRACE)
 typedef enum {
   RESOURCES_METER = 0,
 #if 0
@@ -14,17 +15,11 @@ typedef enum {
   RESOURCES_SIZE
 } resource;
 
-typedef enum {
-  ENCODING_XML = 0,
-  ENCODING_EXI,
-  NR_ENCODINGS
-} encoding;
-
 #define ERR_BLOCKOUTOFSCOPE   -2
-#define ERR_WRONGCONTENTTYPE  -3
 #define ERR_ALLOC             -4
 
 #define MSG_MAX_SIZE  1024
+#endif /* !(POWERTRACE) */
 
 #endif /*REST_SMART_METER_H*/
 
