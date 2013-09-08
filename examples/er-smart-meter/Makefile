@@ -4,7 +4,7 @@ all: er-smart-meter er-meter-client
 CONTIKI=../..
 CFLAGS += -DPROJECT_CONF_H=\"project-conf.h\"
 
-PROJECT_SOURCEFILES += static-routing.c 
+#PROJECT_SOURCEFILES += static-routing.c 
 
 # variable for root Makefile.include
 WITH_UIP6=1
