@@ -31,9 +31,6 @@ else
   CFLAGS += -DCOAP_MAX_HEADER_SIZE=640
   endif
 
-# for collect-view
-COLLECT=0
-
 # linker optimizations
 SMALL=1
 
@@ -65,10 +62,7 @@ APPS += er-http-engine
 endif
 
 APPS += erbium
-ifeq ($(COLLECT), 1)
-CFLAGS += -DCOLLECT
 APPS += powertrace
-endif #COLLECT
 
 # optional rules to get assembly
 #CUSTOM_RULE_C_TO_OBJECTDIR_O = 1

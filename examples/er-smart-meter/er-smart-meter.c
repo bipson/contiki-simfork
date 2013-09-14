@@ -47,10 +47,8 @@
 #include "contiki.h"
 #include "contiki-net.h"
 
-#if COLLECT
 #warning "Compiling with powertrace!"
 #include "powertrace.h"
-#endif /* COLLECT */
 
 #if STATIC_ROUTING
 #warning "Compiling with static routing!"
@@ -97,7 +95,7 @@ static char *msg[RESOURCES_SIZE][NR_ENCODINGS];
 static uint16_t msg_size[RESOURCES_SIZE][NR_ENCODINGS];
 #endif /* COLLECT */
 
-#define CHUNKS_TOTAL    128
+#define CHUNKS_TOTAL    1024
 //#define CHUNKS_TOTAL    4096
 //#define CHUNKS_TOTAL    8
 
@@ -107,9 +105,10 @@ static uint16_t msg_size[RESOURCES_SIZE][NR_ENCODINGS];
 
 #ifndef COLLECT
 void
-send_message(const char* message, const uint16_t size_msg, void* request, void* response, uint8_t *buffer, int32_t *offset)
+send_message(const char* message, const uint16_t size_msg, void *request, void *response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset)
 {
   PRINTF("Send Message: Size = %d, Offset = %d\n", size_msg, *offset);
+  PRINTF("Preferred Size: %d\n", preferred_size);
 
   uint16_t length;
   char *err_msg;
@@ -126,36 +125,43 @@ send_message(const char* message, const uint16_t size_msg, void* request, void* 
     return;
   }
 
-  /* The query string can be retrieved by rest_get_query() or parsed for its key-value pairs. */
-  if (REST.get_query_variable(request, "len", &len))
+  if (preferred_size < 0 || preferred_size > REST_MAX_CHUNK_SIZE)
   {
-    length = atoi(len);
-    if (length < 0)
-      length = 0;
+    preferred_size = REST_MAX_CHUNK_SIZE;
+    PRINTF("Preferred size set to REST_MAX_CHUNK_SIZE = %d\n", preferred_size);
   }
 
-  if (length>REST_MAX_CHUNK_SIZE)     
+  if (length > preferred_size)
   {
-    length = REST_MAX_CHUNK_SIZE;
+    PRINTF("Message still larger then preferred_size, trunkating...\n");
+    length = preferred_size;
+    PRINTF("Length is now %u\n", length);
 
     memcpy(buffer, message + *offset, length);
 
     /* Truncate if above CHUNKS_TOTAL bytes. */
     if (*offset+length > CHUNKS_TOTAL)
+    {
+      PRINTF("Reached CHUNKS_TOTAL, truncating...\n");
       length = CHUNKS_TOTAL - *offset;
-
-    /* IMPORTANT for chunk-wise resources: Signal chunk awareness to REST engine. */
-    *offset += length;
-
-    /* Signal end of resource representation. */
-    if (*offset>=CHUNKS_TOTAL)
+      PRINTF("Length is now %u\n", length);
+      PRINTF("End of resource, setting offset to -1\n");
       *offset = -1;
+    }
+    else
+    {
+      /* IMPORTANT for chunk-wise resources: Signal chunk awareness to REST engine. */
+      *offset += length;
+      PRINTF("Offset refreshed to %u\n", *offset);
+    }
   }
   else
   {
     memcpy(buffer, message + *offset, length);
     *offset = -1;
   }
+  
+  PRINTF("Sending response chunk: length = %u, offset = %d\n", length, *offset);
 
   REST.set_header_etag(response, (uint16_t *) &length, 1);
   REST.set_response_payload(response, buffer, length);
@@ -195,6 +201,7 @@ set_error_response(void* response, int8_t error_code)
   return;
 }
 
+#if 0
 int16_t
 create_response(const char **message, uint8_t resource, void *request, void *response, int8_t *encoding)
 {
@@ -203,6 +210,9 @@ create_response(const char **message, uint8_t resource, void *request, void *res
 
   /* decide upon content-format */
   num = REST.get_header_accept(request, &accept);
+
+  PRINTF("num = %u\n", num);
+  PRINTF("type = %u\n", accept[0]);
 
   if (num && (accept[0]==REST.type.APPLICATION_XML || accept[0]==REST.type.APPLICATION_EXI) )
   {
@@ -228,24 +238,25 @@ create_response(const char **message, uint8_t resource, void *request, void *res
     return ERR_WRONGCONTENTTYPE;
   }
 }
+#endif
 #endif /* !COLLECT */
 
 /********************/
 /* Resources ********/
 /********************/
-RESOURCE(meter, METHOD_GET, "smart-meter", "title=\"Hello meter: ?len=0..\";rt=\"Text\"");
+PERIODIC_RESOURCE(meter, METHOD_GET, "smart-meter", "title=\"Hello meter: ?len=0..\";rt=\"Text\"", 600*CLOCK_SECOND);
 
 void
 meter_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset)
 {
-#ifndef COLLECT
   PRINTF("\nMeter handler called\n");
+#if 0
   /* we save the message as static variable, so it is retained through multiple calls (chunked resource) */
   static const char *meter_message;
   static uint16_t size_msg;
   static int8_t acc_encoding;
 
-  /* compute message once */
+  /* create response */
   if (*offset <= 0)
   {
     PRINTF("First call (offset <= 0)\n");
@@ -264,28 +275,28 @@ meter_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred
   PRINTF("Will send message: %s\n", meter_message);
   PRINTF("Encoding: %d\n", acc_encoding);
   PRINTF("Size: %d\n", size_msg);
-  send_message(meter_message, size_msg, request, response, buffer, offset);
-#else
-  const char *len = NULL;
-  /* Some data that has the length up to REST_MAX_CHUNK_SIZE. For more, see the chunk resource. */
-  char *message = "value xml";
-  int length = 9;
-  /* The query string can be retrieved by rest_get_query() or parsed for its key-value pairs. */
-  if (REST.get_query_variable(request, "len", &len)) {
-    length = atoi(len);
-    if (length<0) length = 0;
-    if (length>REST_MAX_CHUNK_SIZE) length = REST_MAX_CHUNK_SIZE;
-    memcpy(buffer, message, length);
-  } else {
-    memcpy(buffer, message, length);
-  }
-
-  REST.set_header_content_type(response, REST.type.APPLICATION_XML); /* text/plain is the default, hence this option could be omitted. */
-  REST.set_header_etag(response, (uint8_t *) &length, 1);
-  REST.set_response_payload(response, buffer, length);
-#endif /* !COLLECT */
+#endif 
+  send_message(msg[RESOURCES_METER][ENCODING_XML], msg_size[RESOURCES_METER][ENCODING_XML], request, response, buffer, preferred_size, offset);
   return;
 }
+
+void
+meter_periodic_handler(resource_t *r) {
+  static uint16_t obs_counter = 0;
+  PRINTF("periodic meter handler triggered\n");
+
+  obs_counter++;
+  
+  /* Build notification. */
+  coap_packet_t notification[1]; /* This way the packet can be treated as pointer as usual. */
+  coap_init_message(notification, COAP_TYPE_NON, REST.status.OK, 0 );
+  coap_set_header_block2(notification, 0, 1, 64);
+  coap_set_payload(notification, msg[RESOURCES_METER][ENCODING_XML], 64);
+
+  /* Notify the registered observers with the given message type, observe option, and payload. */
+  REST.notify_subscribers(r, obs_counter, notification);
+}
+
 
 #if 0
 RESOURCE(meter_power_history, METHOD_GET, "smart-meter/power/history", "title=\"Hello meter_power: ?len=0..\";rt=\"Text\"");
@@ -493,7 +504,6 @@ AUTOSTART_PROCESSES(&rest_server_example);
 PROCESS_THREAD(rest_server_example, ev, data)
 {
   PROCESS_BEGIN();
-#ifndef COLLECT
   PRINTF("Starting Erbium Example Server\n");
 
 #ifdef RF_CHANNEL
@@ -513,7 +523,6 @@ PROCESS_THREAD(rest_server_example, ev, data)
     set_global_address();
     configure_routing();
   #endif
-#endif /* !COLLECT */
 
   /* Initialize the REST engine. */
   rest_init_engine();
@@ -527,12 +536,13 @@ PROCESS_THREAD(rest_server_example, ev, data)
   memset(&msg_size[0][0], -1, RESOURCES_SIZE * NR_ENCODINGS * sizeof(uint16_t));
 #endif
 
-  rest_activate_resource(&resource_meter);
-#ifdef COLLECT
-#else
-  msg[RESOURCES_METER][REST.type.APPLICATION_XML] = "value xml\0";
-  msg_size[RESOURCES_METER][REST.type.APPLICATION_XML] = 9;
-#endif /* !COLLECT */
+  rest_activate_periodic_resource(&periodic_resource_meter);
+  /*
+  msg[RESOURCES_METER][ENCODING_XML] = "value xml\0";
+  msg_size[RESOURCES_METER][ENCODING_XML] = 9;
+  */
+  msg[RESOURCES_METER][ENCODING_XML] = "value xml, value xmi, value xml, value xmi, foo faa faeh, fadfadfaefadfaefadfaefadgajlödkfjaoihkaflijdflknaoiefhabjaodfoiauefnalkjdfoiargiaenlvknaldofjaoienfalkfnbaldjflakjeflkjaldkjalvlaknfalkfaeiognaknvalkndflaeioqöigqnalkndva\0";
+  msg_size[RESOURCES_METER][ENCODING_XML] = 140;
 #if 0
   msg[RESOURCES_METER][REST.type.APPLICATION_EXI] = "value exi\0";
   msg_size[RESOURCES_METER][REST.type.APPLICATION_EXI] = 10;
@@ -697,9 +707,7 @@ PROCESS_THREAD(rest_server_example, ev, data)
 
 #endif
 
-#if COLLECT
   powertrace_start(CLOCK_SECOND * 10);
-#endif /* COLLECT */
 
   /* Define application-specific events here. */
   while(1) {
