@@ -250,6 +250,7 @@ void
 meter_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset)
 {
   PRINTF("\nMeter handler called\n");
+  PRINTF("Preffered Size: %u\n", preferred_size);
 #if 0
   /* we save the message as static variable, so it is retained through multiple calls (chunked resource) */
   static const char *meter_message;
