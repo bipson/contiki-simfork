@@ -72,14 +72,14 @@ struct resource_s;
 struct periodic_resource_s;
 
 /* Signatures of handler functions. */
-typedef void (*restful_handler) (void* request, void* response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset);
+typedef void (*restful_handler) (void* src_addr, void* request, void* response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset);
 typedef int (*restful_pre_handler) (struct resource_s *resource, void* request, void* response);
 typedef void (*restful_post_handler) (struct resource_s *resource, void* request, void* response);
 typedef void (*restful_periodic_handler) (struct resource_s* resource);
 typedef void (*restful_response_handler) (void *data, void* response);
 
 /* Signature of the rest-engine service function. */
-typedef int (* service_callback_t)(void *request, void *response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset);
+typedef int (* service_callback_t)(void* src_addr, void *request, void *response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset);
 
 /**
  * The structure of a MAC protocol driver in Contiki.
@@ -287,7 +287,7 @@ resource_t resource_##name = {NULL, flags, url, attributes, name##_handler, NULL
  * The subscriber list will be maintained by the post_handler rest_subscription_handler() (see rest-mapping header file).
  */
 #define PERIODIC_RESOURCE(name, flags, url, attributes, period) \
-void name##_handler(void *, void *, uint8_t *, uint16_t, int32_t *); \
+void name##_handler(void *, void *, void *, uint8_t *, uint16_t, int32_t *); \
 resource_t resource_##name = {NULL, flags, url, attributes, name##_handler, NULL, NULL, NULL}; \
 void name##_periodic_handler(resource_t*); \
 periodic_resource_t periodic_resource_##name = {NULL, &resource_##name, period, {{0}}, name##_periodic_handler}
@@ -310,7 +310,7 @@ void rest_activate_event_resource(resource_t* resource);
  * To be called by HTTP/COAP server as a callback function when a new service request appears.
  * This function dispatches the corresponding RESTful service.
  */
-int rest_invoke_restful_service(void* request, void* response, uint8_t *buffer, uint16_t buffer_size, int32_t *offset);
+int rest_invoke_restful_service(void* src_addr, void* request, void* response, uint8_t *buffer, uint16_t buffer_size, int32_t *offset);
 
 /*
  * Returns the resource list

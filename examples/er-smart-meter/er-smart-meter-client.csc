@@ -122,11 +122,25 @@
       </interface_config>
       <motetype_identifier>z13</motetype_identifier>
     </mote>
+    <mote>
+      <breakpoints />
+      <interface_config>
+        se.sics.cooja.interfaces.Position
+        <x>112.81380776077525</x>
+        <y>88.40782661395912</y>
+        <z>0.0</z>
+      </interface_config>
+      <interface_config>
+        se.sics.cooja.mspmote.interfaces.MspMoteID
+        <id>4</id>
+      </interface_config>
+      <motetype_identifier>z13</motetype_identifier>
+    </mote>
   </simulation>
   <plugin>
     se.sics.cooja.plugins.SimControl
     <width>292</width>
-    <z>0</z>
+    <z>2</z>
     <height>190</height>
     <location_x>0</location_x>
     <location_y>0</location_y>
@@ -140,11 +154,11 @@
       <skin>se.sics.cooja.plugins.skins.AttributeVisualizerSkin</skin>
       <skin>se.sics.cooja.plugins.skins.LEDVisualizerSkin</skin>
       <skin>se.sics.cooja.plugins.skins.AddressVisualizerSkin</skin>
-      <viewport>4.087810962550999 0.0 0.0 4.087810962550999 -69.19634282170504 -38.2009905174442</viewport>
+      <viewport>3.8897017960397573 0.0 0.0 3.8897017960397573 -153.3537373318381 -70.22267455688085</viewport>
     </plugin_config>
-    <width>522</width>
-    <z>4</z>
-    <height>397</height>
+    <width>421</width>
+    <z>3</z>
+    <height>388</height>
     <location_x>10</location_x>
     <location_y>256</location_y>
   </plugin>
@@ -155,10 +169,10 @@
       <coloring />
     </plugin_config>
     <width>816</width>
-    <z>1</z>
+    <z>0</z>
     <height>341</height>
-    <location_x>606</location_x>
-    <location_y>7</location_y>
+    <location_x>443</location_x>
+    <location_y>5</location_y>
   </plugin>
   <plugin>
     se.sics.cooja.plugins.RadioLogger
@@ -167,7 +181,7 @@
       <analyzers name="6lowpan" />
     </plugin_config>
     <width>808</width>
-    <z>2</z>
+    <z>1</z>
     <height>614</height>
     <location_x>513</location_x>
     <location_y>147</location_y>
@@ -178,6 +192,7 @@
       <mote>0</mote>
       <mote>1</mote>
       <mote>2</mote>
+      <mote>3</mote>
       <showRadioRXTX />
       <showRadioHW />
       <showLEDs />
@@ -186,7 +201,7 @@
       <zoomfactor>20000.0</zoomfactor>
     </plugin_config>
     <width>1392</width>
-    <z>3</z>
+    <z>4</z>
     <height>249</height>
     <location_x>-2</location_x>
     <location_y>666</location_y>

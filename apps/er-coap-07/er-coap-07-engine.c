@@ -44,7 +44,7 @@
 
 #include "er-coap-07-engine.h"
 
-#define DEBUG 0 
+#define DEBUG 0
 #if DEBUG
 #define PRINTF(...) printf(__VA_ARGS__)
 #define PRINT6ADDR(addr) PRINTF("[%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x]", ((uint8_t *)addr)[0], ((uint8_t *)addr)[1], ((uint8_t *)addr)[2], ((uint8_t *)addr)[3], ((uint8_t *)addr)[4], ((uint8_t *)addr)[5], ((uint8_t *)addr)[6], ((uint8_t *)addr)[7], ((uint8_t *)addr)[8], ((uint8_t *)addr)[9], ((uint8_t *)addr)[10], ((uint8_t *)addr)[11], ((uint8_t *)addr)[12], ((uint8_t *)addr)[13], ((uint8_t *)addr)[14], ((uint8_t *)addr)[15])
@@ -148,7 +148,12 @@ coap_receive(void)
           if (service_cbk)
           {
             /* Call REST framework and check if found and allowed. */
+            /* modified request to trace sender-addr */
+#if 0
             if (service_cbk(message, response, transaction->packet+COAP_MAX_HEADER_SIZE, block_size, &new_offset))
+#else
+            if (service_cbk(&UIP_IP_BUF->srcipaddr, message, response, transaction->packet+COAP_MAX_HEADER_SIZE, block_size, &new_offset))
+#endif
             {
               if (coap_error_code==NO_ERROR)
               {

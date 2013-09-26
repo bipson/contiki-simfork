@@ -93,10 +93,10 @@ uip_ipaddr_t server_ipaddr;
 static struct etimer et;
 
 /* Example URIs that can be queried. */
-#define NUMBER_OF_URLS 2
+#define NUMBER_OF_URLS 3
 #define NUMBER_OF_ENCODINGS 2
 /* leading and ending slashes only for demo purposes, get cropped automatically when setting the Uri-Path */
-char* service_urls[NUMBER_OF_URLS] = {"smart-meter/power/history/query", "smart-meter/power/history/rollup"};
+char* service_urls[NUMBER_OF_URLS] = {"smart-meter", "smart-meter/power/history/query", "smart-meter/power/history/rollup"};
 uint8_t encodings[NUMBER_OF_ENCODINGS] = {41, 47};
 #if PLATFORM_HAS_BUTTON
 static int uri_switch = 0;
@@ -160,8 +160,8 @@ PROCESS_THREAD(coap_client_example, ev, data)
       /* send a request to notify the end of the process */
 
       coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0);
-      coap_set_header_uri_path(request, service_urls[uri_switch+1]);
-      coap_set_header_accept(request, encodings[uri_switch+1]);
+      coap_set_header_uri_path(request, service_urls[uri_switch]);
+      coap_set_header_accept(request, encodings[uri_switch]);
 
       printf("--Requesting %s--\n", service_urls[uri_switch]);
 

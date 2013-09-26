@@ -144,12 +144,14 @@ rest_set_special_flags(resource_t* resource, rest_resource_flags_t flags)
 }
 
 int
-rest_invoke_restful_service(void* request, void* response, uint8_t *buffer, uint16_t buffer_size, int32_t *offset)
+rest_invoke_restful_service(void* src_addr, void* request, void* response, uint8_t *buffer, uint16_t buffer_size, int32_t *offset)
 {
   uint8_t found = 0;
   uint8_t allowed = 0;
 
+/*
   PRINTF("rest_invoke_restful_service url /%.*s -->\n", url_len, url);
+*/
 
   resource_t* resource = NULL;
   const char *url = NULL;
@@ -173,7 +175,7 @@ rest_invoke_restful_service(void* request, void* response, uint8_t *buffer, uint
         if (!resource->pre_handler || resource->pre_handler(resource, request, response))
         {
           /* call handler function*/
-          resource->handler(request, response, buffer, buffer_size, offset);
+          resource->handler(src_addr, request, response, buffer, buffer_size, offset);
 
           /*call post handler if it exists*/
           if (resource->post_handler)

@@ -112,7 +112,6 @@ send_message(const char* message, const uint16_t size_msg, void *request, void *
 
   uint16_t length;
   char *err_msg;
-  const char* len;
 
   length = size_msg - *offset;
 
@@ -247,10 +246,12 @@ create_response(const char **message, uint8_t resource, void *request, void *res
 PERIODIC_RESOURCE(meter, METHOD_GET, "smart-meter", "title=\"Hello meter: ?len=0..\";rt=\"Text\"", 600*CLOCK_SECOND);
 
 void
-meter_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset)
+meter_handler(void* src_addr, void* request, void* response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset)
 {
   PRINTF("\nMeter handler called\n");
   PRINTF("Preffered Size: %u\n", preferred_size);
+  PRINT6ADDR(src_addr);
+  PRINTF("\n");
 #if 0
   /* we save the message as static variable, so it is retained through multiple calls (chunked resource) */
   static const char *meter_message;
@@ -538,12 +539,12 @@ PROCESS_THREAD(rest_server_example, ev, data)
 #endif
 
   rest_activate_periodic_resource(&periodic_resource_meter);
-  /*
   msg[RESOURCES_METER][ENCODING_XML] = "value xml\0";
   msg_size[RESOURCES_METER][ENCODING_XML] = 9;
-  */
+  /*
   msg[RESOURCES_METER][ENCODING_XML] = "value xml, value xmi, value xml, value xmi, foo faa faeh, fadfadfaefadfaefadfaefadgajlödkfjaoihkaflijdflknaoiefhabjaodfoiauefnalkjdfoiargiaenlvknaldofjaoienfalkfnbaldjflakjeflkjaldkjalvlaknfalkfaeiognaknvalkndflaeioqöigqnalkndva\0";
   msg_size[RESOURCES_METER][ENCODING_XML] = 140;
+  */
 #if 0
   msg[RESOURCES_METER][REST.type.APPLICATION_EXI] = "value exi\0";
   msg_size[RESOURCES_METER][REST.type.APPLICATION_EXI] = 10;
