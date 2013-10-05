@@ -25,6 +25,9 @@ typedef enum {
 #define ERR_ALLOC             -4
 
 #define MSG_MAX_SIZE  1024
+#define CHUNKS_TOTAL    1024
+
+#define MAX_REQUESTERS  30
 
 #endif /*ER_SMART_METER_H*/
 

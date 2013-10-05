@@ -83,7 +83,7 @@
 #define LOCAL_PORT      UIP_HTONS(COAP_DEFAULT_PORT+1)
 #define REMOTE_PORT     UIP_HTONS(COAP_DEFAULT_PORT)
 
-#define TOGGLE_INTERVAL 10
+#define TOGGLE_INTERVAL 1
 
 PROCESS(coap_client_example, "COAP Client Example");
 AUTOSTART_PROCESSES(&coap_client_example);
@@ -96,20 +96,40 @@ static struct etimer et;
 #define NUMBER_OF_URLS 3
 #define NUMBER_OF_ENCODINGS 2
 /* leading and ending slashes only for demo purposes, get cropped automatically when setting the Uri-Path */
-char* service_urls[NUMBER_OF_URLS] = {"smart-meter", "smart-meter/power/history/query", "smart-meter/power/history/rollup"};
-uint8_t encodings[NUMBER_OF_ENCODINGS] = {41, 47};
-#if PLATFORM_HAS_BUTTON
-static int uri_switch = 0;
-#endif
+char* service_url = "smart-meter";
+volatile uint8_t count = 0 - 1;
 
 /* This function is will be passed to COAP_BLOCKING_REQUEST() to handle responses. */
 void
 client_chunk_handler(void *response)
 {
-  uint8_t *chunk;
+  const uint8_t *chunk;
+  uint8_t return_value;
 
-  int len = coap_get_payload(response, &chunk);
-  printf("|%.*s", len, (char *)chunk);
+  if (coap_get_payload(response, &chunk))
+  {
+    PRINTF("received: %s", (char *)chunk);
+
+    return_value = atoi((char *)chunk);
+
+    if (return_value != count)
+    {
+      if (return_value == count-1)
+      {
+        printf("resent response received?\n");
+        return;
+      }
+      printf("ERROR: Missing response! received: %u, expected: %u\n", return_value, count);
+      count = return_value;
+      return;
+    }
+
+    PRINTF("received expected packet\n");
+  }
+  else
+  {
+    printf("ERROR: FATAL payload missing!\n");
+  }
 }
 
 
@@ -127,50 +147,53 @@ PROCESS_THREAD(coap_client_example, ev, data)
 
 #if PLATFORM_HAS_BUTTON
   SENSORS_ACTIVATE(button_sensor);
-  printf("Press a button to request %s\n", service_urls[uri_switch]);
+  printf("Press a button to request %s\n", service_url);
 #endif
 
   while(1) {
     PROCESS_YIELD();
-#if 0
     if (etimer_expired(&et)) {
-      printf("--Toggle timer--\n");
+      PRINTF("--Toggle timer--\n");
+      count++;
 
       /* prepare request, TID is set by COAP_BLOCKING_REQUEST() */
       coap_init_message(request, COAP_TYPE_CON, COAP_POST, 0 );
-      coap_set_header_uri_path(request, service_urls[1]);
+      coap_set_header_uri_path(request, service_url);
 
-      const char msg[] = "Toggle!";
-      coap_set_payload(request, (uint8_t *)msg, sizeof(msg)-1);
-
-
-      PRINT6ADDR(&server_ipaddr);
       PRINTF(" : %u\n", UIP_HTONS(REMOTE_PORT));
+
+      char msg[4];
+      uint8_t message_size = snprintf(msg, sizeof(msg), "%u", count);
+
+      PRINTF("will send %u\n", count);
+
+      coap_set_payload(request, (uint8_t *)msg, message_size);
 
       COAP_BLOCKING_REQUEST(&server_ipaddr, REMOTE_PORT, request, client_chunk_handler);
 
-      printf("\n--Done--\n");
+      PRINTF("\n--Done--\n");
 
       etimer_reset(&et);
+    }
 
-#endif
 #if PLATFORM_HAS_BUTTON
   if (ev == sensors_event && data == &button_sensor) {
 
       /* send a request to notify the end of the process */
 
       coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0);
-      coap_set_header_uri_path(request, service_urls[uri_switch]);
-      coap_set_header_accept(request, encodings[uri_switch]);
+      coap_set_header_uri_path(request, service_url);
+      //coap_set_header_accept(request, encodings[uri_switch]);
 
-      printf("--Requesting %s--\n", service_urls[uri_switch]);
+      PRINTF("--Requesting %s--\n", service_url);
 
       PRINT6ADDR(&server_ipaddr);
       PRINTF(" : %u\n", UIP_HTONS(REMOTE_PORT));
 
       COAP_BLOCKING_REQUEST(&server_ipaddr, REMOTE_PORT, request, client_chunk_handler);
 
-      printf("\n--Done--\n");
+      PRINTF("\n--Done--\n");
+      count++;
 
       //uri_switch = (uri_switch+1) % NUMBER_OF_URLS;
     }

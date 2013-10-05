@@ -77,7 +77,7 @@
 #warning "Erbium example without CoAP-specifc functionality"
 #endif /* CoAP-specific example */
 
-#define DEBUG 1
+#define DEBUG 0
 #if DEBUG
 #define PRINTF(...) printf(__VA_ARGS__)
 #define PRINT6ADDR(addr) PRINTF("[%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x]", ((uint8_t *)addr)[0], ((uint8_t *)addr)[1], ((uint8_t *)addr)[2], ((uint8_t *)addr)[3], ((uint8_t *)addr)[4], ((uint8_t *)addr)[5], ((uint8_t *)addr)[6], ((uint8_t *)addr)[7], ((uint8_t *)addr)[8], ((uint8_t *)addr)[9], ((uint8_t *)addr)[10], ((uint8_t *)addr)[11], ((uint8_t *)addr)[12], ((uint8_t *)addr)[13], ((uint8_t *)addr)[14], ((uint8_t *)addr)[15])
@@ -91,13 +91,15 @@
 #if REST_RES_METER
 #ifdef COLLECT
 #else
+/*
 static char *msg[RESOURCES_SIZE][NR_ENCODINGS];
 static uint16_t msg_size[RESOURCES_SIZE][NR_ENCODINGS];
+*/
+
+static uint16_t requesters[MAX_REQUESTERS];
+static uint8_t requester_count[MAX_REQUESTERS];
 #endif /* COLLECT */
 
-#define CHUNKS_TOTAL    1024
-//#define CHUNKS_TOTAL    4096
-//#define CHUNKS_TOTAL    8
 
 /********************/
 /* helper functions */
@@ -162,7 +164,7 @@ send_message(const char* message, const uint16_t size_msg, void *request, void *
   
   PRINTF("Sending response chunk: length = %u, offset = %d\n", length, *offset);
 
-  REST.set_header_etag(response, (uint16_t *) &length, 1);
+  REST.set_header_etag(response, (uint8_t *) &length, 1);
   REST.set_response_payload(response, buffer, length);
 }
 
@@ -243,15 +245,93 @@ create_response(const char **message, uint8_t resource, void *request, void *res
 /********************/
 /* Resources ********/
 /********************/
-PERIODIC_RESOURCE(meter, METHOD_GET, "smart-meter", "title=\"Hello meter: ?len=0..\";rt=\"Text\"", 600*CLOCK_SECOND);
+PERIODIC_RESOURCE(meter, METHOD_POST, "smart-meter", "title=\"Hello meter: ?len=0..\";rt=\"Text\"", 600*CLOCK_SECOND);
 
 void
 meter_handler(void* src_addr, void* request, void* response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset)
 {
   PRINTF("\nMeter handler called\n");
   PRINTF("Preffered Size: %u\n", preferred_size);
-  PRINT6ADDR(src_addr);
-  PRINTF("\n");
+  
+  uint16_t source_id = (((uint8_t *)src_addr)[14] << 8) + (((uint8_t *)src_addr)[15]);
+  uint8_t *count = NULL;
+  uint8_t count_received;
+  const uint8_t *foo;
+
+
+  if (REST.get_request_payload(request, &foo))
+  {
+     count_received = atoi((const char*) foo);
+
+     /* keep track of requesters */
+     int i;
+     for (i = 0; i < MAX_REQUESTERS; i++)
+     {
+       PRINTF("i = %d\n", i); 
+       /* add requester if at EOL */
+       if (requesters[i] == 0)
+       {
+         PRINTF("Adding %u to end of list\n", source_id);
+         requesters[i] = source_id;
+         requester_count[i] = 0;
+         count = &requester_count[i];
+         break;
+       }
+
+       if (requesters[i] == source_id)
+       {
+         PRINTF("Found in list, retrieving count\n");
+         count = &requester_count[i];
+         break;
+       }
+     }
+
+     if (count == NULL)
+     {
+       printf("ERROR: must have reached MAX_REQUESTERS!\n");
+       REST.set_response_status(response, REST.status.INTERNAL_SERVER_ERROR);
+       REST.set_response_payload(response, "ERROR", 5);
+       return;
+     }
+
+     if (count_received != *count)
+     {
+       if (count_received == *count-1)
+       {
+         /* seems to be a resent message. pre-reduce count */
+         PRINTF("resend received from %u (%u)? Avoiding count\n", source_id, count_received);
+         (*count)--;
+       }
+       else
+       {
+         printf("ERROR: missing request from %u! received: %u, expected: %u\n", source_id, count_received, *count);
+         *count = count_received;
+       }
+     }
+#if DEBUG
+     else
+     {
+       printf("%u sent %u\n", source_id, count_received);
+     }
+#endif
+
+     PRINTF("Sending %u count %u\n", source_id, *count);
+
+     char message[4];
+     uint8_t message_size = snprintf(message, sizeof(message), "%u", (*count)++);
+
+     memcpy(buffer, message, message_size);
+     *offset = -1;
+
+     REST.set_header_content_type(response, REST.type.TEXT_PLAIN); /* text/plain is the default, hence this option could be omitted. */
+     REST.set_response_payload(response, buffer, message_size);
+
+  }
+  else
+  {
+    printf("ERROR: no payload!\n");
+  }
+
 #if 0
   /* we save the message as static variable, so it is retained through multiple calls (chunked resource) */
   static const char *meter_message;
@@ -277,13 +357,15 @@ meter_handler(void* src_addr, void* request, void* response, uint8_t *buffer, ui
   PRINTF("Will send message: %s\n", meter_message);
   PRINTF("Encoding: %d\n", acc_encoding);
   PRINTF("Size: %d\n", size_msg);
-#endif 
   send_message(msg[RESOURCES_METER][ENCODING_XML], msg_size[RESOURCES_METER][ENCODING_XML], request, response, buffer, preferred_size, offset);
+#endif 
+
   return;
 }
 
 void
 meter_periodic_handler(resource_t *r) {
+#if 0
   static uint16_t obs_counter = 0;
   PRINTF("periodic meter handler triggered\n");
 
@@ -297,6 +379,7 @@ meter_periodic_handler(resource_t *r) {
 
   /* Notify the registered observers with the given message type, observe option, and payload. */
   REST.notify_subscribers(r, obs_counter, notification);
+#endif
 }
 
 
@@ -538,10 +621,12 @@ PROCESS_THREAD(rest_server_example, ev, data)
   memset(&msg_size[0][0], -1, RESOURCES_SIZE * NR_ENCODINGS * sizeof(uint16_t));
 #endif
 
+  memset(requesters, 0, MAX_REQUESTERS);
+
   rest_activate_periodic_resource(&periodic_resource_meter);
+  /*
   msg[RESOURCES_METER][ENCODING_XML] = "value xml\0";
   msg_size[RESOURCES_METER][ENCODING_XML] = 9;
-  /*
   msg[RESOURCES_METER][ENCODING_XML] = "value xml, value xmi, value xml, value xmi, foo faa faeh, fadfadfaefadfaefadfaefadgajlödkfjaoihkaflijdflknaoiefhabjaodfoiauefnalkjdfoiargiaenlvknaldofjaoienfalkfnbaldjflakjeflkjaldkjalvlaknfalkfaeiognaknvalkndflaeioqöigqnalkndva\0";
   msg_size[RESOURCES_METER][ENCODING_XML] = 140;
   */
@@ -709,7 +794,7 @@ PROCESS_THREAD(rest_server_example, ev, data)
 
 #endif
 
-  powertrace_start(CLOCK_SECOND * 10);
+  //powertrace_start(CLOCK_SECOND * 10);
 
   /* Define application-specific events here. */
   while(1) {
