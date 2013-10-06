@@ -83,7 +83,7 @@
 #define LOCAL_PORT      UIP_HTONS(COAP_DEFAULT_PORT+1)
 #define REMOTE_PORT     UIP_HTONS(COAP_DEFAULT_PORT)
 
-#define TOGGLE_INTERVAL 1
+#define TOGGLE_INTERVAL 5
 
 PROCESS(coap_client_example, "COAP Client Example");
 AUTOSTART_PROCESSES(&coap_client_example);
@@ -97,7 +97,8 @@ static struct etimer et;
 #define NUMBER_OF_ENCODINGS 2
 /* leading and ending slashes only for demo purposes, get cropped automatically when setting the Uri-Path */
 char* service_url = "smart-meter";
-volatile uint8_t count = 0 - 1;
+uint8_t count = 0 - 1;
+uint8_t last_count = 0 - 1;
 
 /* This function is will be passed to COAP_BLOCKING_REQUEST() to handle responses. */
 void
@@ -119,12 +120,19 @@ client_chunk_handler(void *response)
         printf("resent response received?\n");
         return;
       }
-      printf("ERROR: Missing response! received: %u, expected: %u\n", return_value, count);
+      printf("ERROR: Wrong response! received: %u, expected: %u\n", return_value, count);
       count = return_value;
       return;
     }
 
     PRINTF("received expected packet\n");
+
+    if (((uint8_t)(last_count + 1)) != return_value)
+    {
+      printf("ERROR: Missing response! received: %u, expected %u\n", return_value, last_count + 1);
+    }
+    
+    last_count = return_value;
   }
   else
   {
