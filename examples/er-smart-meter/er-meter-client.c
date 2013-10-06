@@ -83,7 +83,7 @@
 #define LOCAL_PORT      UIP_HTONS(COAP_DEFAULT_PORT+1)
 #define REMOTE_PORT     UIP_HTONS(COAP_DEFAULT_PORT)
 
-#define TOGGLE_INTERVAL 5
+#define TOGGLE_INTERVAL 10
 
 PROCESS(coap_client_example, "COAP Client Example");
 AUTOSTART_PROCESSES(&coap_client_example);
@@ -127,10 +127,12 @@ client_chunk_handler(void *response)
 
     PRINTF("received expected packet\n");
 
+    /* redundant
     if (((uint8_t)(last_count + 1)) != return_value)
     {
       printf("ERROR: Missing response! received: %u, expected %u\n", return_value, last_count + 1);
     }
+    */
     
     last_count = return_value;
   }
@@ -162,6 +164,10 @@ PROCESS_THREAD(coap_client_example, ev, data)
     PROCESS_YIELD();
     if (etimer_expired(&et)) {
       PRINTF("--Toggle timer--\n");
+      if (last_count != count)
+      {
+        printf("ERROR: Missing response (in %i sec)!\n", TOGGLE_INTERVAL);
+      }
       count++;
 
       /* prepare request, TID is set by COAP_BLOCKING_REQUEST() */
