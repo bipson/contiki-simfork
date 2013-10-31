@@ -136,6 +136,7 @@ coap_receive(void)
               SET_OPTION(response, COAP_OPTION_TOKEN);
           }
 
+
           /* get offset for blockwise transfers */
           if (coap_get_header_block2(message, &block_num, NULL, &block_size, &block_offset))
           {

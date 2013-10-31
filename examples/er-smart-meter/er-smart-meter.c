@@ -38,7 +38,7 @@
  *      Matthias Kovatsch <kovatsch@inf.ethz.ch>
  */
 
-#include <stdlib.h>
+//#include <stdlib.h>
 #include <string.h>
 #if 0
 #include "sys/clock.h"
@@ -77,7 +77,7 @@
 #warning "Erbium example without CoAP-specifc functionality"
 #endif /* CoAP-specific example */
 
-#define DEBUG 1
+#define DEBUG 0
 #if DEBUG
 #define PRINTF(...) printf(__VA_ARGS__)
 #define PRINT6ADDR(addr) PRINTF("[%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x]", ((uint8_t *)addr)[0], ((uint8_t *)addr)[1], ((uint8_t *)addr)[2], ((uint8_t *)addr)[3], ((uint8_t *)addr)[4], ((uint8_t *)addr)[5], ((uint8_t *)addr)[6], ((uint8_t *)addr)[7], ((uint8_t *)addr)[8], ((uint8_t *)addr)[9], ((uint8_t *)addr)[10], ((uint8_t *)addr)[11], ((uint8_t *)addr)[12], ((uint8_t *)addr)[13], ((uint8_t *)addr)[14], ((uint8_t *)addr)[15])
@@ -91,8 +91,6 @@
 #if REST_RES_METER
 #ifdef COLLECT
 #else
-static char *msg[RESOURCES_SIZE][NR_ENCODINGS];
-static uint16_t msg_size[RESOURCES_SIZE][NR_ENCODINGS];
 #endif /* COLLECT */
 
 #define CHUNKS_TOTAL    1024
@@ -111,17 +109,18 @@ send_message(const char* message, const uint16_t size_msg, void *request, void *
   PRINTF("Preferred Size: %d\n", preferred_size);
 
   uint16_t length;
-  char *err_msg;
-  const char* len;
+  //char *err_msg;
 
   length = size_msg - *offset;
 
   if (length <= 0)
   {
+#if 0
     PRINTF("AHOYHOY?!\n");
     REST.set_response_status(response, REST.status.INTERNAL_SERVER_ERROR);
     err_msg = "calculation of message length error";
     REST.set_response_payload(response, err_msg, strlen(err_msg));
+#endif
     return;
   }
 
@@ -137,7 +136,14 @@ send_message(const char* message, const uint16_t size_msg, void *request, void *
     length = preferred_size;
     PRINTF("Length is now %u\n", length);
 
-    memcpy(buffer, message + *offset, length);
+    uint8_t strpos = 0;
+    /* Generate data until reaching CHUNKS_TOTAL. */
+    while (strpos<preferred_size)
+    {
+      strpos += snprintf((char *)buffer+strpos, preferred_size-strpos+1, "%s", message);
+    }
+
+    //memcpy(buffer, message + *offset, length);
 
     /* Truncate if above CHUNKS_TOTAL bytes. */
     if (*offset+length > CHUNKS_TOTAL)
@@ -167,6 +173,7 @@ send_message(const char* message, const uint16_t size_msg, void *request, void *
   REST.set_response_payload(response, buffer, length);
 }
 
+#if 0
 void
 set_error_response(void* response, int8_t error_code)
 {
@@ -200,6 +207,7 @@ set_error_response(void* response, int8_t error_code)
 
   return;
 }
+#endif
 
 #if 0
 int16_t
@@ -244,13 +252,18 @@ create_response(const char **message, uint8_t resource, void *request, void *res
 /********************/
 /* Resources ********/
 /********************/
-PERIODIC_RESOURCE(meter, METHOD_GET, "smart-meter", "title=\"Hello meter: ?len=0..\";rt=\"Text\"", 600*CLOCK_SECOND);
+RESOURCE(meter, METHOD_GET, "h", "title=\"Hello meter: ?len=0..\";rt=\"Text\"");
+//PERIODIC_RESOURCE(meter, METHOD_GET, "smart-meter", "title=\"Hello meter: ?len=0..\";rt=\"Text\"", 600*CLOCK_SECOND);
 
 void
 meter_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset)
 {
   PRINTF("\nMeter handler called\n");
   PRINTF("Preffered Size: %u\n", preferred_size);
+
+  char *msg = "h";
+  uint16_t msg_size = 1;
+
 #if 0
   /* we save the message as static variable, so it is retained through multiple calls (chunked resource) */
   static const char *meter_message;
@@ -277,10 +290,12 @@ meter_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred
   PRINTF("Encoding: %d\n", acc_encoding);
   PRINTF("Size: %d\n", size_msg);
 #endif 
-  send_message(msg[RESOURCES_METER][ENCODING_XML], msg_size[RESOURCES_METER][ENCODING_XML], request, response, buffer, preferred_size, offset);
+  send_message(msg, msg_size, request, response, buffer, preferred_size, offset);
   return;
 }
 
+
+#if 0
 void
 meter_periodic_handler(resource_t *r) {
   static uint16_t obs_counter = 0;
@@ -292,12 +307,12 @@ meter_periodic_handler(resource_t *r) {
   coap_packet_t notification[1]; /* This way the packet can be treated as pointer as usual. */
   coap_init_message(notification, COAP_TYPE_NON, REST.status.OK, 0 );
   coap_set_header_block2(notification, 0, 1, 64);
-  coap_set_payload(notification, msg[RESOURCES_METER][ENCODING_XML], 64);
+  coap_set_payload(notification, msg, 64);
 
   /* Notify the registered observers with the given message type, observe option, and payload. */
   REST.notify_subscribers(r, obs_counter, notification);
 }
-
+#endif
 
 #if 0
 RESOURCE(meter_power_history, METHOD_GET, "smart-meter/power/history", "title=\"Hello meter_power: ?len=0..\";rt=\"Text\"");
@@ -537,13 +552,12 @@ PROCESS_THREAD(rest_server_example, ev, data)
   memset(&msg_size[0][0], -1, RESOURCES_SIZE * NR_ENCODINGS * sizeof(uint16_t));
 #endif
 
-  rest_activate_periodic_resource(&periodic_resource_meter);
+  rest_activate_resource(&resource_meter);
+  //rest_activate_periodic_resource(&periodic_resource_meter);
   /*
   msg[RESOURCES_METER][ENCODING_XML] = "value xml\0";
   msg_size[RESOURCES_METER][ENCODING_XML] = 9;
   */
-  msg[RESOURCES_METER][ENCODING_XML] = "value xml, value xmi, value xml, value xmi, foo faa faeh, fadfadfaefadfaefadfaefadgajlödkfjaoihkaflijdflknaoiefhabjaodfoiauefnalkjdfoiargiaenlvknaldofjaoienfalkfnbaldjflakjeflkjaldkjalvlaknfalkfaeiognaknvalkndflaeioqöigqnalkndva\0";
-  msg_size[RESOURCES_METER][ENCODING_XML] = 140;
 #if 0
   msg[RESOURCES_METER][REST.type.APPLICATION_EXI] = "value exi\0";
   msg_size[RESOURCES_METER][REST.type.APPLICATION_EXI] = 10;

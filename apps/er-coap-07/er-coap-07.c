@@ -691,7 +691,7 @@ coap_parse_message(void *packet, uint8_t *data, uint16_t data_len)
         case COAP_OPTION_BLOCK2:
           coap_pkt->block2_num = coap_parse_int_option(current_option, option_len);
           coap_pkt->block2_more = (coap_pkt->block2_num & 0x08)>>3;
-          coap_pkt->block2_size = 16 << (coap_pkt->block2_num & 0x07);
+          coap_pkt->block2_size = (16 << (coap_pkt->block2_num & 0x07));
           coap_pkt->block2_offset = (coap_pkt->block2_num & ~0x0000000F)<<(coap_pkt->block2_num & 0x07);
           coap_pkt->block2_num >>= 4;
           PRINTF("Block2 [%lu%s (%u B/blk)]\n", coap_pkt->block2_num, coap_pkt->block2_more ? "+" : "", coap_pkt->block2_size);
@@ -1119,6 +1119,7 @@ coap_get_header_block2(void *packet, uint32_t *num, uint8_t *more, uint16_t *siz
   if (num!=NULL) *num = coap_pkt->block2_num;
   if (more!=NULL) *more = coap_pkt->block2_more;
   if (size!=NULL) *size = coap_pkt->block2_size;
+  printf("size: %u\n", *size);
   if (offset!=NULL) *offset = coap_pkt->block2_offset;
 
   return 1;

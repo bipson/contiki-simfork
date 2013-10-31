@@ -1,4 +1,4 @@
-all: rest-server-example 
+all: rest-server-example
 #coap-client-example
 
 ifndef TARGET
@@ -21,6 +21,8 @@ else
 CFLAGS += -DWITH_HTTP
 APPS += rest-http
 endif
+
+APPS += powertrace
 
 include $(CONTIKI)/Makefile.include
 
