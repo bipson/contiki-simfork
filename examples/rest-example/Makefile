@@ -1,10 +1,6 @@
 all: rest-server-example 
 #coap-client-example
 
-ifndef TARGET
-TARGET=sky
-endif
-
 CONTIKI=../..
 
 WITH_UIP6=1
