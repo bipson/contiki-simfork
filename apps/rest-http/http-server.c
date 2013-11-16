@@ -137,6 +137,7 @@ http_set_service_callback(service_callback callback)
 
 const char* content_types[] = {
   "text/plain",
+#if 0
   "text/xml",
   "text/csv",
   "text/html",
@@ -145,6 +146,7 @@ const char* content_types[] = {
   "application/json",
   "application/link-format",
   "application/x-www-form-urlencoded",
+#endif
 };
 
 const char*
