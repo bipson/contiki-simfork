@@ -92,15 +92,8 @@ AUTOSTART_PROCESSES(&coap_client_example);
 uip_ipaddr_t server_ipaddr;
 static struct etimer et;
 
-/* Example URIs that can be queried. */
-#define NUMBER_OF_URLS 2
-#define NUMBER_OF_ENCODINGS 2
 /* leading and ending slashes only for demo purposes, get cropped automatically when setting the Uri-Path */
-char* service_urls[NUMBER_OF_URLS] = {"smart-meter/power/history/query", "smart-meter/power/history/rollup"};
-uint8_t encodings[NUMBER_OF_ENCODINGS] = {41, 47};
-#if PLATFORM_HAS_BUTTON
-static int uri_switch = 0;
-#endif
+char* service_url = "smart-meter";
 
 /* This function is will be passed to COAP_BLOCKING_REQUEST() to handle responses. */
 void
@@ -109,7 +102,7 @@ client_chunk_handler(void *response)
   uint8_t *chunk;
 
   int len = coap_get_payload(response, &chunk);
-  printf("|%.*s", len, (char *)chunk);
+  printf("received: %s\n", (char *)chunk);
 }
 
 
@@ -125,57 +118,23 @@ PROCESS_THREAD(coap_client_example, ev, data)
 
   etimer_set(&et, TOGGLE_INTERVAL * CLOCK_SECOND);
 
-#if PLATFORM_HAS_BUTTON
-  SENSORS_ACTIVATE(button_sensor);
-  printf("Press a button to request %s\n", service_urls[uri_switch]);
-#endif
-
   while(1) {
     PROCESS_YIELD();
-#if 0
     if (etimer_expired(&et)) {
       printf("--Toggle timer--\n");
 
       /* prepare request, TID is set by COAP_BLOCKING_REQUEST() */
-      coap_init_message(request, COAP_TYPE_CON, COAP_POST, 0 );
-      coap_set_header_uri_path(request, service_urls[1]);
-
-      const char msg[] = "Toggle!";
-      coap_set_payload(request, (uint8_t *)msg, sizeof(msg)-1);
-
+      coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0 );
+      coap_set_header_uri_path(request, service_url);
 
       PRINT6ADDR(&server_ipaddr);
       PRINTF(" : %u\n", UIP_HTONS(REMOTE_PORT));
 
       COAP_BLOCKING_REQUEST(&server_ipaddr, REMOTE_PORT, request, client_chunk_handler);
 
-      printf("\n--Done--\n");
-
+      printf("--Done--\n");
       etimer_reset(&et);
-
-#endif
-#if PLATFORM_HAS_BUTTON
-  if (ev == sensors_event && data == &button_sensor) {
-
-      /* send a request to notify the end of the process */
-
-      coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0);
-      coap_set_header_uri_path(request, service_urls[uri_switch+1]);
-      coap_set_header_accept(request, encodings[uri_switch+1]);
-
-      printf("--Requesting %s--\n", service_urls[uri_switch]);
-
-      PRINT6ADDR(&server_ipaddr);
-      PRINTF(" : %u\n", UIP_HTONS(REMOTE_PORT));
-
-      COAP_BLOCKING_REQUEST(&server_ipaddr, REMOTE_PORT, request, client_chunk_handler);
-
-      printf("\n--Done--\n");
-
-      //uri_switch = (uri_switch+1) % NUMBER_OF_URLS;
     }
-#endif
-
   }
 
   PROCESS_END();

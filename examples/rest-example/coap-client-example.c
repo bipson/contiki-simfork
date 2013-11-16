@@ -18,7 +18,7 @@
 #define PRINTLLADDR(addr)
 #endif
 
-#define SERVER_NODE(ipaddr)   uip_ip6addr(ipaddr, 0xfe80, 0, 0, 0, 0x0212, 0x7401, 0x0001, 0x0101)
+#define SERVER_NODE(ipaddr)   uip_ip6addr(ipaddr, 0xaaaa, 0, 0, 0, 0xc30c, 0, 0, 0x2)
 #define LOCAL_PORT 61617
 #define REMOTE_PORT 61616
 
@@ -30,7 +30,7 @@ static struct etimer et;
 #define MAX_PAYLOAD_LEN   100
 
 #define NUMBER_OF_URLS 3
-char* service_urls[NUMBER_OF_URLS] = {"light", ".well-known/core", "helloworld"};
+char* service_url = "h";
 
 static void
 response_handler(coap_packet_t* response)
@@ -54,20 +54,19 @@ send_data(void)
 
   if (init_buffer(COAP_DATA_BUFF_SIZE)) {
     int data_size = 0;
-    int service_id = random_rand() % NUMBER_OF_URLS;
     coap_packet_t* request = (coap_packet_t*)allocate_buffer(sizeof(coap_packet_t));
     init_packet(request);
 
     coap_set_method(request, COAP_GET);
     request->tid = xact_id++;
     request->type = MESSAGE_TYPE_CON;
-    coap_set_header_uri(request, service_urls[service_id]);
+    coap_set_header_uri(request, service_url);
 
     data_size = serialize_packet(request, buf);
 
     PRINTF("Client sending request to:[");
     PRINT6ADDR(&client_conn->ripaddr);
-    PRINTF("]:%u/%s\n", (uint16_t)REMOTE_PORT, service_urls[service_id]);
+    PRINTF("]:%u/%s\n", (uint16_t)REMOTE_PORT, service_url);
     uip_udp_packet_send(client_conn, buf, data_size);
 
     delete_buffer();
@@ -108,7 +107,7 @@ PROCESS_THREAD(coap_client_example, ev, data)
   PRINTF(" local/remote port %u/%u\n",
   UIP_HTONS(client_conn->lport), UIP_HTONS(client_conn->rport));
 
-  etimer_set(&et, 5 * CLOCK_SECOND);
+  etimer_set(&et, 10 * CLOCK_SECOND);
   while(1) {
     PROCESS_YIELD();
     if (etimer_expired(&et)) {

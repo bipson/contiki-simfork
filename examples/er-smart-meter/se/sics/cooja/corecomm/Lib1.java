@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Swedish Institute of Computer Science.
+ * Copyright (c) 2006, Swedish Institute of Computer Science.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,33 +26,33 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *
  */
 
-#ifndef __PROJECT_RPL_WEB_CONF_H__
-#define __PROJECT_RPL_WEB_CONF_H__
+package se.sics.cooja.corecomm;
+import java.io.File;
 
-#ifndef QUEUEBUF_CONF_NUM
-#define QUEUEBUF_CONF_NUM          6
-#endif
+import se.sics.cooja.*;
 
-/* Disabling RDC for demo purposes. Core updates often require more memory. */
-/* For projects, optimize memory and enable RDC again. */
-#undef NETSTACK_CONF_RDC
-//#define NETSTACK_CONF_RDC     nullrdc_driver
-#define NETSTACK_CONF_RDC       contikimac_driver 
+/**
+ * @see CoreComm
+ * @author Fredrik Osterlind
+ */
+public class Lib1 extends CoreComm {
 
+  /**
+   * Loads library libFile.
+   *
+   * @see CoreComm
+   * @param libFile Library file
+   */
+  public Lib1(File libFile) {
+    System.load(libFile.getAbsolutePath());
+    init();
+  }
 
-#ifndef UIP_CONF_BUFFER_SIZE
-#define UIP_CONF_BUFFER_SIZE    140
-#endif
-
-#ifndef UIP_CONF_RECEIVE_WINDOW
-#define UIP_CONF_RECEIVE_WINDOW  60
-#endif
-
-#ifndef WEBSERVER_CONF_CFS_CONNS
-#define WEBSERVER_CONF_CFS_CONNS 2
-#endif
-
-#endif /* __PROJECT_RPL_WEB_CONF_H__ */
+  public native void tick();
+  public native void init();
+  public native void setReferenceAddress(int addr);
+  public native void getMemory(int rel_addr, int length, byte[] mem);
+  public native void setMemory(int rel_addr, int length, byte[] mem);
+}

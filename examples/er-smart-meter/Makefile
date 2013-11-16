@@ -5,7 +5,7 @@ all: er-smart-meter er-meter-client
 
 # variable for this Makefile
 # configure CoAP implementation (3|7|12|13) (er-coap-07 also supports CoAP draft 08)
-WITH_COAP=07
+WITH_COAP=7
 
 # variable for Makefile.include
 WITH_UIP6=1
