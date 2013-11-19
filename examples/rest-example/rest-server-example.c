@@ -29,7 +29,7 @@ helloworld_handler(REQUEST* request, RESPONSE* response)
   char *buffer = "aaaabbbbccccddddeeeeffffgggghhhhaaaabbbbccccddddeeeeffffgggghhhhaaaabbbbccccddddeeeeffffgggghhhhaaaabbbbccccddddeeeeffffgggghhhh";
 
   rest_set_header_content_type(response, TEXT_PLAIN);
-  rest_set_response_payload(response, (uint8_t*)buffer, 128);
+  rest_set_response_payload(response, (uint8_t*)buffer, 64);
 }
 
 PROCESS(rest_server_example, "R");

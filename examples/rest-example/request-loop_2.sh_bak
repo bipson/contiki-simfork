@@ -2,10 +2,11 @@
 
 trap "killall curl" 2
 
-CURL='curl aaaa::c30c:0:0:2:8080/h'
 
 (curl "aaaa::c30c:0:0:2:8080/h" &)
+(curl "aaaa::c30c:0:0:3:8080/h" &)
 while sleep 10; do
   (curl "aaaa::c30c:0:0:2:8080/h" &)
+  (curl "aaaa::c30c:0:0:3:8080/h" &)
 done
 
