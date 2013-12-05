@@ -154,7 +154,7 @@ send_message(const char* message, const uint16_t size_msg, void *request, void *
 /********************/
 /* Resources ********/
 /********************/
-RESOURCE(meter, METHOD_GET, "smart-meter", "title=\"Hello meter: ?len=0..\";rt=\"Text\"");
+RESOURCE(meter, METHOD_GET, "h", "title=\"Hello meter: ?len=0..\";rt=\"Text\"");
 
 void
 meter_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset)
@@ -163,7 +163,7 @@ meter_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred
   PRINTF("Preffered Size: %u\n", preferred_size);
 
   char const *const msg = "aaaabbbbccccddddeeeeffffgggghhhhaaaabbbbccccddddeeeeffffgggghhhhaaaabbbbccccddddeeeeffffgggghhhhaaaabbbbccccddddeeeeffffgggghhhh";
-  const uint8_t msg_size = 128;
+  const uint8_t msg_size = 64;
 
   send_message(msg, msg_size, request, response, buffer, preferred_size, offset);
 

@@ -44,6 +44,9 @@
 
 #include "contiki.h"
 #include "contiki-net.h"
+#include "sys/mt.h"
+
+#include "dev/button-sensor.h"
 
 #if !UIP_CONF_IPV6_RPL && !defined (CONTIKI_TARGET_MINIMAL_NET) && !defined (CONTIKI_TARGET_NATIVE)
 #warning "Compiling with static routing!"
@@ -78,7 +81,7 @@
 
 /* TODO: This server address is hard-coded for Cooja. */
 //#define SERVER_NODE(ipaddr)   uip_ip6addr(ipaddr, 0xaaaa, 0, 0, 0, 0x202, 0x2, 0x2, 0x2) /* cooja2 */
-#define SERVER_NODE(ipaddr)   uip_ip6addr(ipaddr, 0xaaaa, 0, 0, 0, 0xc30c, 0x0, 0x0, 0x002) /* cooja2 */
+#define SERVER_NODE(ipaddr, id)   uip_ip6addr(ipaddr, 0xaaaa, 0, 0, 0, 0xc30c, 0x0, 0x0, id) /* cooja2 */
 
 #define LOCAL_PORT      UIP_HTONS(COAP_DEFAULT_PORT+1)
 #define REMOTE_PORT     UIP_HTONS(COAP_DEFAULT_PORT)
@@ -89,7 +92,8 @@ PROCESS(coap_client_example, "COAP Client Example");
 AUTOSTART_PROCESSES(&coap_client_example);
 
 
-uip_ipaddr_t server_ipaddr;
+uip_ipaddr_t server_ipaddr[4];
+static coap_packet_t request[1]; /* This way the packet can be treated as pointer as usual. */
 static struct etimer et;
 
 /* leading and ending slashes only for demo purposes, get cropped automatically when setting the Uri-Path */
@@ -105,35 +109,83 @@ client_chunk_handler(void *response)
   printf("received: %s\n", (char *)chunk);
 }
 
+static void
+thread_main(void *data)
+{
+  coap_receiver_init();
+  int id = atoi((char *) data);
+  COAP_BLOCKING_REQUEST(&server_ipaddr[id], REMOTE_PORT, request, client_chunk_handler);
+  mt_exit();
+}
 
 PROCESS_THREAD(coap_client_example, ev, data)
 {
+  static int count = 0;
+  static int active = 0;
+
+  static struct mt_thread thread1;
+
   PROCESS_BEGIN();
 
-  static coap_packet_t request[1]; /* This way the packet can be treated as pointer as usual. */
-  SERVER_NODE(&server_ipaddr);
+  mt_init();
+  mt_start(&thread1, thread_main, "1");
+
+  SERVER_NODE(&server_ipaddr[0], 2);
+  SERVER_NODE(&server_ipaddr[1], 3);
+  SERVER_NODE(&server_ipaddr[2], 4);
+  SERVER_NODE(&server_ipaddr[3], 5);
 
   /* receives all CoAP messages */
   coap_receiver_init();
+
+  SENSORS_ACTIVATE(button_sensor);
 
   etimer_set(&et, TOGGLE_INTERVAL * CLOCK_SECOND);
 
   while(1) {
     PROCESS_YIELD();
-    if (etimer_expired(&et)) {
-      printf("--Toggle timer--\n");
 
-      /* prepare request, TID is set by COAP_BLOCKING_REQUEST() */
-      coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0 );
-      coap_set_header_uri_path(request, service_url);
+    if (etimer_expired(&et)) 
+    {
+      if (active)
+      {
+        printf("--Toggle timer--\n");
 
-      PRINT6ADDR(&server_ipaddr);
-      PRINTF(" : %u\n", UIP_HTONS(REMOTE_PORT));
+        /* prepare request, TID is set by COAP_BLOCKING_REQUEST() */
+        coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0 );
+        coap_set_header_uri_path(request, service_url);
 
-      COAP_BLOCKING_REQUEST(&server_ipaddr, REMOTE_PORT, request, client_chunk_handler);
+        PRINT6ADDR(&server_ipaddr);
+        PRINTF(" : %u\n", UIP_HTONS(REMOTE_PORT));
 
-      printf("--Done--\n");
+        mt_exec(&thread1);
+#if 0
+        COAP_BLOCKING_REQUEST(&server_ipaddr[0], REMOTE_PORT, request, client_chunk_handler);
+        COAP_BLOCKING_REQUEST(&server_ipaddr[1], REMOTE_PORT, request, client_chunk_handler);
+        COAP_BLOCKING_REQUEST(&server_ipaddr[2], REMOTE_PORT, request, client_chunk_handler);
+        COAP_BLOCKING_REQUEST(&server_ipaddr[3], REMOTE_PORT, request, client_chunk_handler);
+#endif
+
+        count++;
+        printf("--Done--\n");
+        if (count >= 10)
+        {
+          active = 0;
+        }
+        else
+        {
+          printf("FINISHED!\n");
+          mt_stop(&thread1);
+          mt_remove();
+        }
+      }
       etimer_reset(&et);
+    }
+
+    if (ev == sensors_event && data == &button_sensor)
+    {
+      printf("starting!\n");
+      active = 1;
     }
   }
 

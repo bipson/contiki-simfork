@@ -1,4 +1,5 @@
-all: er-smart-meter er-meter-client
+all: er-smart-meter
+# er-meter-client
 # Use this target explicitly if requried: er-plugtest-server
 
 #PROJECT_SOURCEFILES += static-routing.c 
