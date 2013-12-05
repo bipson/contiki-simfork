@@ -692,6 +692,7 @@ coap_parse_message(void *packet, uint8_t *data, uint16_t data_len)
           coap_pkt->block2_num = coap_parse_int_option(current_option, option_len);
           coap_pkt->block2_more = (coap_pkt->block2_num & 0x08)>>3;
           coap_pkt->block2_size = 16 << (coap_pkt->block2_num & 0x07);
+          /* dirty hack to trick the compiler/simulator to not over-optimize the block2_size field and thus somehow ignore the above assignment */
           printf("%u\n", coap_pkt->block2_size);
           coap_pkt->block2_offset = (coap_pkt->block2_num & ~0x0000000F)<<(coap_pkt->block2_num & 0x07);
           coap_pkt->block2_num >>= 4;
