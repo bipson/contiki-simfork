@@ -3,6 +3,7 @@
 #trap "killall curl" 2
 
 available=0
+interval=$1
 
 while [ "$available" = "0" ]; do
   available=1
@@ -15,7 +16,7 @@ while [ "$available" = "0" ]; do
 done
 
 for i in `seq 1 10`; do
-  (curl "aaaa::c30c:0:0:2:8080/h" &)
+  (sh curl-caller.sh "aaaa::c30c:0:0:2:8080/h" $interval  &)
   sleep 10;
 done
 
