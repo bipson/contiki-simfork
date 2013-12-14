@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Swedish Institute of Computer Science.
+ * Copyright (c) 2013, CETIC, www.cetic.be.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,14 +28,47 @@
  *
  * This file is part of the Contiki operating system.
  *
- * Author: Adam Dunkels <adam@sics.se>
- *
  */
-#ifndef __CONTIKI_VERSION__
-#define __CONTIKI_VERSION__
 
-#ifndef CONTIKI_VERSION_STRING
-#define CONTIKI_VERSION_STRING "Contiki 3.x"
-#endif /* CONTIKI_VERSION_STRING */
+#include "contiki.h"
+#include "contiki-lib.h"
+#include "contiki-net.h"
+#include "net/rpl/rpl.h"
+#include "net/uip.h"
+#include <string.h>
 
-#endif /* __CONTIKI_VERSION__ */
+#define DEBUG DEBUG_FULL
+#include "net/uip-debug.h"
+
+#define INTERVAL    5 * CLOCK_SECOND
+
+/*---------------------------------------------------------------------------*/
+PROCESS(wait_for_dag, "Wait for DAG process");
+AUTOSTART_PROCESSES(&wait_for_dag);
+/*---------------------------------------------------------------------------*/
+static void
+timeout_handler(void)
+{
+  rpl_dag_t *dag = rpl_get_any_dag();
+  if (dag != NULL) {
+    PRINTF("DAG Found\n");
+  }
+}
+/*---------------------------------------------------------------------------*/
+PROCESS_THREAD(wait_for_dag, ev, data)
+{
+  static struct etimer et;
+
+  PROCESS_BEGIN();
+  PRINTF("Wait for DAG process started\n");
+  etimer_set(&et, INTERVAL);
+  while(1) {
+    PROCESS_YIELD();
+    if(etimer_expired(&et)) {
+      timeout_handler();
+      etimer_restart(&et);
+    } 
+  }
+  PROCESS_END();
+}
+/*---------------------------------------------------------------------------*/
