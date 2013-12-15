@@ -5,7 +5,7 @@
 interval=$1
 
 while [ "0" ]; do
-  (ping6 -c 1 "aaaa::c30c:0:0:2")
+  (ping6 -c 1 "aaaa::c30c:0:0:2" -W $interval)
   if [ "$?" = "0" ]; then
     break
   fi

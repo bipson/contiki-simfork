@@ -108,11 +108,11 @@
       <skin>se.sics.cooja.plugins.skins.LEDVisualizerSkin</skin>
       <skin>se.sics.cooja.plugins.skins.AddressVisualizerSkin</skin>
       <skin>se.sics.cooja.plugins.skins.TrafficVisualizerSkin</skin>
-      <viewport>2.914145871408 0.0 0.0 2.914145871408 -112.54848359697546 25.142615603055166</viewport>
+      <viewport>4.076083531903973 0.0 0.0 4.076083531903973 -159.63138677710145 15.38420679202753</viewport>
     </plugin_config>
-    <width>314</width>
+    <width>473</width>
     <z>0</z>
-    <height>327</height>
+    <height>420</height>
     <location_x>12</location_x>
     <location_y>211</location_y>
   </plugin>
