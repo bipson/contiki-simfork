@@ -43,8 +43,10 @@
 #include "contiki.h"
 #include "contiki-net.h"
 
+#if WITH_POWERTRACE
 #warning "Compiling with powertrace!"
 #include "powertrace.h"
+#endif
 
 #if STATIC_ROUTING
 #warning "Compiling with static routing!"
@@ -163,7 +165,7 @@ meter_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred
   PRINTF("Preffered Size: %u\n", preferred_size);
 
   char const *const msg = "aaaabbbbccccddddeeeeffffgggghhhhaaaabbbbccccddddeeeeffffgggghhhhaaaabbbbccccddddeeeeffffgggghhhhaaaabbbbccccddddeeeeffffgggghhhh";
-  const uint8_t msg_size = 64;
+  const uint8_t msg_size = 128;
 
   send_message(msg, msg_size, request, response, buffer, preferred_size, offset);
 
@@ -212,7 +214,9 @@ PROCESS_THREAD(rest_server_example, ev, data)
 
 #endif /* REST_RES_METER */
 
+#if WITH_POWERTRACE
   powertrace_start(CLOCK_SECOND * 10);
+#endif 
 
   /* Define application-specific events here. */
   while(1) {

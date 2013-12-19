@@ -44,7 +44,6 @@
 
 #include "contiki.h"
 #include "contiki-net.h"
-#include "sys/mt.h"
 
 #include "dev/button-sensor.h"
 
@@ -91,49 +90,57 @@
 PROCESS(coap_client_example, "COAP Client Example");
 AUTOSTART_PROCESSES(&coap_client_example);
 
+PROCESS(request_proc, "Watchdog");
 
-uip_ipaddr_t server_ipaddr[4];
+uip_ipaddr_t server_ipaddr;
 static coap_packet_t request[1]; /* This way the packet can be treated as pointer as usual. */
 static struct etimer et;
 
 /* leading and ending slashes only for demo purposes, get cropped automatically when setting the Uri-Path */
-char* service_url = "smart-meter";
+char* service_url = "h";
+static int received;
 
 /* This function is will be passed to COAP_BLOCKING_REQUEST() to handle responses. */
 void
 client_chunk_handler(void *response)
 {
-  uint8_t *chunk;
+  uint32_t num;
+  uint8_t more;
+  uint16_t size;
+  uint32_t offset;
 
-  int len = coap_get_payload(response, &chunk);
-  printf("received: %s\n", (char *)chunk);
+  /* just register if this was the last package */
+  coap_get_header_block2(response, &num, &more, &size, &offset);
+  if (!more)
+  {
+    printf("OK\n");
+    received = 1;
+  }
 }
 
-static void
-thread_main(void *data)
+PROCESS_THREAD(request_proc, ev, data)
 {
-  coap_receiver_init();
-  int id = atoi((char *) data);
-  COAP_BLOCKING_REQUEST(&server_ipaddr[id], REMOTE_PORT, request, client_chunk_handler);
-  mt_exit();
+  PROCESS_BEGIN();
+
+  COAP_BLOCKING_REQUEST(&server_ipaddr, REMOTE_PORT, request, client_chunk_handler);
+
+  PROCESS_END();
 }
 
 PROCESS_THREAD(coap_client_example, ev, data)
 {
-  static int count = 0;
-  static int active = 0;
-
-  static struct mt_thread thread1;
-
   PROCESS_BEGIN();
 
-  mt_init();
-  mt_start(&thread1, thread_main, "1");
+  static int count = 0;
+  static int active = 0;
+  received = 1;
 
-  SERVER_NODE(&server_ipaddr[0], 2);
+  SERVER_NODE(&server_ipaddr, 2);
+#if 0
   SERVER_NODE(&server_ipaddr[1], 3);
   SERVER_NODE(&server_ipaddr[2], 4);
   SERVER_NODE(&server_ipaddr[3], 5);
+#endif
 
   /* receives all CoAP messages */
   coap_receiver_init();
@@ -147,9 +154,15 @@ PROCESS_THREAD(coap_client_example, ev, data)
 
     if (etimer_expired(&et)) 
     {
+      // timer is always running and resetting, we just hook in
       if (active)
       {
-        printf("--Toggle timer--\n");
+        PRINTF("before request: %i\n", received);
+        PRINTF("--Toggle timer--\n");
+        if (received == 0) {
+          process_exit(&request_proc);
+          printf("ERROR\n");
+        }
 
         /* prepare request, TID is set by COAP_BLOCKING_REQUEST() */
         coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0 );
@@ -158,25 +171,17 @@ PROCESS_THREAD(coap_client_example, ev, data)
         PRINT6ADDR(&server_ipaddr);
         PRINTF(" : %u\n", UIP_HTONS(REMOTE_PORT));
 
-        mt_exec(&thread1);
-#if 0
-        COAP_BLOCKING_REQUEST(&server_ipaddr[0], REMOTE_PORT, request, client_chunk_handler);
-        COAP_BLOCKING_REQUEST(&server_ipaddr[1], REMOTE_PORT, request, client_chunk_handler);
-        COAP_BLOCKING_REQUEST(&server_ipaddr[2], REMOTE_PORT, request, client_chunk_handler);
-        COAP_BLOCKING_REQUEST(&server_ipaddr[3], REMOTE_PORT, request, client_chunk_handler);
-#endif
+        received = 0;
+        process_start(&request_proc, NULL);
+
+        PRINTF("after request: %i\n", received);
 
         count++;
-        printf("--Done--\n");
+        PRINTF("--Done--\n");
         if (count >= 10)
         {
           active = 0;
-        }
-        else
-        {
-          printf("FINISHED!\n");
-          mt_stop(&thread1);
-          mt_remove();
+          printf("LAST!\n");
         }
       }
       etimer_reset(&et);

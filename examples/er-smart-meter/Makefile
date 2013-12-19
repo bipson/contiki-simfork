@@ -1,8 +1,10 @@
-all: er-smart-meter
-# er-meter-client
+all: er-smart-meter er-meter-client
 # Use this target explicitly if requried: er-plugtest-server
 
 #PROJECT_SOURCEFILES += static-routing.c 
+
+#for powertrace
+WITH_POWERTRACE=0
 
 # variable for this Makefile
 # configure CoAP implementation (3|7|12|13) (er-coap-07 also supports CoAP draft 08)
@@ -63,7 +65,10 @@ APPS += er-http-engine
 endif
 
 APPS += erbium
+ifeq ($(WITH_POWERTRACE), 1)
+CFLAGS += -DWITH_POWERTRACE=1
 APPS += powertrace
+endif
 
 # optional rules to get assembly
 #CUSTOM_RULE_C_TO_OBJECTDIR_O = 1
