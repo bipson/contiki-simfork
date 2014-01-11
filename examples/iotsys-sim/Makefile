@@ -1,4 +1,4 @@
-all: er-smart-meter er-meter-client
+all: er-obix-server er-obix-requester
 # Use this target explicitly if requried: er-plugtest-server
 
 #PROJECT_SOURCEFILES += static-routing.c 

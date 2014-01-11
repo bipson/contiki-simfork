@@ -8,7 +8,8 @@
   <project EXPORT="discard">[APPS_DIR]/powertracker</project>
   <simulation>
     <title>REST with RPL router</title>
-    <randomseed>123456</randomseed>
+    <speedlimit>1.0</speedlimit>
+    <randomseed>123482</randomseed>
     <motedelay_us>1000000</motedelay_us>
     <radiomedium>
       se.sics.cooja.radiomediums.UDGM
@@ -44,29 +45,9 @@
       se.sics.cooja.mspmote.Z1MoteType
       <identifier>z11</identifier>
       <description>smart-meter</description>
-      <source EXPORT="discard">[CONTIKI_DIR]/examples/er-smart-meter/er-smart-meter.c</source>
-      <commands EXPORT="discard">make er-smart-meter.z1 TARGET=z1</commands>
-      <firmware EXPORT="copy">[CONTIKI_DIR]/examples/er-smart-meter/er-smart-meter.z1</firmware>
-      <moteinterface>se.sics.cooja.interfaces.Position</moteinterface>
-      <moteinterface>se.sics.cooja.interfaces.RimeAddress</moteinterface>
-      <moteinterface>se.sics.cooja.interfaces.IPAddress</moteinterface>
-      <moteinterface>se.sics.cooja.interfaces.Mote2MoteRelations</moteinterface>
-      <moteinterface>se.sics.cooja.interfaces.MoteAttributes</moteinterface>
-      <moteinterface>se.sics.cooja.mspmote.interfaces.MspClock</moteinterface>
-      <moteinterface>se.sics.cooja.mspmote.interfaces.MspMoteID</moteinterface>
-      <moteinterface>se.sics.cooja.mspmote.interfaces.MspButton</moteinterface>
-      <moteinterface>se.sics.cooja.mspmote.interfaces.Msp802154Radio</moteinterface>
-      <moteinterface>se.sics.cooja.mspmote.interfaces.MspDefaultSerial</moteinterface>
-      <moteinterface>se.sics.cooja.mspmote.interfaces.MspLED</moteinterface>
-      <moteinterface>se.sics.cooja.mspmote.interfaces.MspDebugOutput</moteinterface>
-    </motetype>
-    <motetype>
-      se.sics.cooja.mspmote.Z1MoteType
-      <identifier>z13</identifier>
-      <description>requester</description>
-      <source EXPORT="discard">[CONTIKI_DIR]/examples/er-smart-meter/er-meter-client.c</source>
-      <commands EXPORT="discard">make er-meter-client.z1 TARGET=z1</commands>
-      <firmware EXPORT="copy">[CONTIKI_DIR]/examples/er-smart-meter/er-meter-client.z1</firmware>
+      <source EXPORT="discard">[CONTIKI_DIR]/examples/iotsys-sim/er-obix-server.c</source>
+      <commands EXPORT="discard">make er-obix-server.z1 TARGET=z1</commands>
+      <firmware EXPORT="copy">[CONTIKI_DIR]/examples/iotsys-sim/er-obix-server.z1</firmware>
       <moteinterface>se.sics.cooja.interfaces.Position</moteinterface>
       <moteinterface>se.sics.cooja.interfaces.RimeAddress</moteinterface>
       <moteinterface>se.sics.cooja.interfaces.IPAddress</moteinterface>
@@ -98,8 +79,8 @@
       <breakpoints />
       <interface_config>
         se.sics.cooja.interfaces.Position
-        <x>84.44528036743785</x>
-        <y>33.808067883647894</y>
+        <x>122.53414790718469</x>
+        <y>8.470112019744725</y>
         <z>0.0</z>
       </interface_config>
       <interface_config>
@@ -112,21 +93,21 @@
       <breakpoints />
       <interface_config>
         se.sics.cooja.interfaces.Position
-        <x>54.355826347469694</x>
-        <y>110.86642573966387</y>
+        <x>88.87411318617202</x>
+        <y>36.52014095392194</y>
         <z>0.0</z>
       </interface_config>
       <interface_config>
         se.sics.cooja.mspmote.interfaces.MspMoteID
-        <id>3</id>
+        <id>7</id>
       </interface_config>
-      <motetype_identifier>z13</motetype_identifier>
+      <motetype_identifier>z11</motetype_identifier>
     </mote>
   </simulation>
   <plugin>
     se.sics.cooja.plugins.SimControl
     <width>292</width>
-    <z>3</z>
+    <z>2</z>
     <height>190</height>
     <location_x>0</location_x>
     <location_y>0</location_y>
@@ -140,13 +121,14 @@
       <skin>se.sics.cooja.plugins.skins.AttributeVisualizerSkin</skin>
       <skin>se.sics.cooja.plugins.skins.LEDVisualizerSkin</skin>
       <skin>se.sics.cooja.plugins.skins.AddressVisualizerSkin</skin>
-      <viewport>2.3656313440688654 0.0 0.0 2.3656313440688654 124.98637568188366 11.05461196907169</viewport>
+      <skin>se.sics.cooja.plugins.skins.TrafficVisualizerSkin</skin>
+      <viewport>1.4260234844628803 0.0 0.0 1.4260234844628803 30.26342743570656 88.92142134381271</viewport>
     </plugin_config>
-    <width>522</width>
-    <z>0</z>
-    <height>397</height>
-    <location_x>10</location_x>
-    <location_y>256</location_y>
+    <width>314</width>
+    <z>4</z>
+    <height>327</height>
+    <location_x>12</location_x>
+    <location_y>211</location_y>
   </plugin>
   <plugin>
     se.sics.cooja.plugins.LogListener
@@ -157,20 +139,20 @@
     <width>816</width>
     <z>1</z>
     <height>341</height>
-    <location_x>606</location_x>
-    <location_y>7</location_y>
+    <location_x>656</location_x>
+    <location_y>1</location_y>
   </plugin>
   <plugin>
     se.sics.cooja.plugins.RadioLogger
     <plugin_config>
-      <split>150</split>
+      <split>289</split>
       <analyzers name="6lowpan" />
     </plugin_config>
-    <width>808</width>
-    <z>2</z>
-    <height>614</height>
-    <location_x>802</location_x>
-    <location_y>341</location_y>
+    <width>770</width>
+    <z>0</z>
+    <height>408</height>
+    <location_x>654</location_x>
+    <location_y>348</location_y>
   </plugin>
   <plugin>
     se.sics.cooja.plugins.TimeLine
@@ -183,13 +165,13 @@
       <showLEDs />
       <showWatchpoints />
       <split>125</split>
-      <zoomfactor>20000.0</zoomfactor>
+      <zoomfactor>100000.0</zoomfactor>
     </plugin_config>
-    <width>1392</width>
-    <z>4</z>
-    <height>249</height>
-    <location_x>-2</location_x>
-    <location_y>666</location_y>
+    <width>1475</width>
+    <z>3</z>
+    <height>227</height>
+    <location_x>-7</location_x>
+    <location_y>755</location_y>
   </plugin>
   <plugin>
     SerialSocketServer
@@ -197,8 +179,8 @@
     <width>422</width>
     <z>5</z>
     <height>87</height>
-    <location_x>137</location_x>
-    <location_y>159</location_y>
+    <location_x>217</location_x>
+    <location_y>51</location_y>
   </plugin>
 </simconf>
 

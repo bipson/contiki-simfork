@@ -190,6 +190,7 @@ PROCESS_THREAD(coap_client_example, ev, data)
     if (ev == sensors_event && data == &button_sensor)
     {
       printf("starting!\n");
+      count = 0;
       active = 1;
     }
   }

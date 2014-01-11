@@ -48,11 +48,6 @@
 #include "powertrace.h"
 #endif
 
-#if STATIC_ROUTING
-#warning "Compiling with static routing!"
-#include "static-routing.h"
-#endif
-
 /* Define which resources to include to meet memory constraints. */
 #define REST_RES_METER 1
 

@@ -9,7 +9,7 @@
   <simulation>
     <title>REST with RPL router</title>
     <speedlimit>1.0</speedlimit>
-    <randomseed>123468</randomseed>
+    <randomseed>123464</randomseed>
     <motedelay_us>1000000</motedelay_us>
     <radiomedium>
       se.sics.cooja.radiomediums.UDGM
@@ -45,9 +45,9 @@
       se.sics.cooja.mspmote.Z1MoteType
       <identifier>z11</identifier>
       <description>smart-meter</description>
-      <source EXPORT="discard">[CONTIKI_DIR]/examples/er-smart-meter/er-smart-meter.c</source>
-      <commands EXPORT="discard">make er-smart-meter.z1 TARGET=z1</commands>
-      <firmware EXPORT="copy">[CONTIKI_DIR]/examples/er-smart-meter/er-smart-meter.z1</firmware>
+      <source EXPORT="discard">[CONTIKI_DIR]/examples/iotsys-sim/er-obix-server.c</source>
+      <commands EXPORT="discard">make er-obix-server.z1 TARGET=z1</commands>
+      <firmware EXPORT="copy">[CONTIKI_DIR]/examples/iotsys-sim/er-obix-server.z1</firmware>
       <moteinterface>se.sics.cooja.interfaces.Position</moteinterface>
       <moteinterface>se.sics.cooja.interfaces.RimeAddress</moteinterface>
       <moteinterface>se.sics.cooja.interfaces.IPAddress</moteinterface>
@@ -79,8 +79,8 @@
       <breakpoints />
       <interface_config>
         se.sics.cooja.interfaces.Position
-        <x>122.53414790718469</x>
-        <y>8.470112019744725</y>
+        <x>86.31046833379217</x>
+        <y>31.06943156443843</y>
         <z>0.0</z>
       </interface_config>
       <interface_config>
@@ -93,8 +93,8 @@
       <breakpoints />
       <interface_config>
         se.sics.cooja.interfaces.Position
-        <x>6.827778553703674</x>
-        <y>0.05510333949156093</y>
+        <x>32.716322574044675</x>
+        <y>28.916322346539</y>
         <z>0.0</z>
       </interface_config>
       <interface_config>
@@ -107,13 +107,13 @@
       <breakpoints />
       <interface_config>
         se.sics.cooja.interfaces.Position
-        <x>88.87411318617202</x>
-        <y>36.52014095392194</y>
+        <x>16.100921067808056</x>
+        <y>81.71295420857196</y>
         <z>0.0</z>
       </interface_config>
       <interface_config>
         se.sics.cooja.mspmote.interfaces.MspMoteID
-        <id>7</id>
+        <id>4</id>
       </interface_config>
       <motetype_identifier>z11</motetype_identifier>
     </mote>
@@ -121,13 +121,13 @@
       <breakpoints />
       <interface_config>
         se.sics.cooja.interfaces.Position
-        <x>30.670303147754304</x>
-        <y>35.11763950721308</y>
+        <x>60.75302383517531</x>
+        <y>112.84653045003905</y>
         <z>0.0</z>
       </interface_config>
       <interface_config>
         se.sics.cooja.mspmote.interfaces.MspMoteID
-        <id>9</id>
+        <id>5</id>
       </interface_config>
       <motetype_identifier>z11</motetype_identifier>
     </mote>
@@ -150,7 +150,7 @@
       <skin>se.sics.cooja.plugins.skins.LEDVisualizerSkin</skin>
       <skin>se.sics.cooja.plugins.skins.AddressVisualizerSkin</skin>
       <skin>se.sics.cooja.plugins.skins.TrafficVisualizerSkin</skin>
-      <viewport>1.4260234844628803 0.0 0.0 1.4260234844628803 53.26342743570656 91.92142134381271</viewport>
+      <viewport>2.4410944444851457 0.0 0.0 2.4410944444851457 -6.303868969720126 -28.469038561014134</viewport>
     </plugin_config>
     <width>314</width>
     <z>0</z>
@@ -165,7 +165,7 @@
       <coloring />
     </plugin_config>
     <width>816</width>
-    <z>2</z>
+    <z>1</z>
     <height>341</height>
     <location_x>659</location_x>
     <location_y>15</location_y>
@@ -177,8 +177,8 @@
       <analyzers name="6lowpan" />
     </plugin_config>
     <width>770</width>
-    <z>1</z>
-    <height>408</height>
+    <z>2</z>
+    <height>466</height>
     <location_x>640</location_x>
     <location_y>278</location_y>
   </plugin>
@@ -199,9 +199,9 @@
     </plugin_config>
     <width>1475</width>
     <z>4</z>
-    <height>315</height>
+    <height>267</height>
     <location_x>-7</location_x>
-    <location_y>667</location_y>
+    <location_y>715</location_y>
   </plugin>
   <plugin>
     SerialSocketServer

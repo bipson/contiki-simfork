@@ -9,7 +9,7 @@
   <simulation>
     <title>REST with RPL router</title>
     <speedlimit>1.0</speedlimit>
-    <randomseed>123460</randomseed>
+    <randomseed>123464</randomseed>
     <motedelay_us>1000000</motedelay_us>
     <radiomedium>
       se.sics.cooja.radiomediums.UDGM
@@ -45,9 +45,9 @@
       se.sics.cooja.mspmote.Z1MoteType
       <identifier>z11</identifier>
       <description>smart-meter</description>
-      <source EXPORT="discard">[CONTIKI_DIR]/examples/er-smart-meter/er-smart-meter.c</source>
-      <commands EXPORT="discard">make er-smart-meter.z1 TARGET=z1</commands>
-      <firmware EXPORT="copy">[CONTIKI_DIR]/examples/er-smart-meter/er-smart-meter.z1</firmware>
+      <source EXPORT="discard">[CONTIKI_DIR]/examples/iotsys-sim/er-obix-server.c</source>
+      <commands EXPORT="discard">make er-obix-server.z1 TARGET=z1</commands>
+      <firmware EXPORT="copy">[CONTIKI_DIR]/examples/iotsys-sim/er-obix-server.z1</firmware>
       <moteinterface>se.sics.cooja.interfaces.Position</moteinterface>
       <moteinterface>se.sics.cooja.interfaces.RimeAddress</moteinterface>
       <moteinterface>se.sics.cooja.interfaces.IPAddress</moteinterface>
@@ -79,8 +79,8 @@
       <breakpoints />
       <interface_config>
         se.sics.cooja.interfaces.Position
-        <x>86.31046833379217</x>
-        <y>31.06943156443843</y>
+        <x>122.53414790718469</x>
+        <y>8.470112019744725</y>
         <z>0.0</z>
       </interface_config>
       <interface_config>
@@ -93,13 +93,97 @@
       <breakpoints />
       <interface_config>
         se.sics.cooja.interfaces.Position
-        <x>32.716322574044675</x>
-        <y>28.916322346539</y>
+        <x>6.827778553703674</x>
+        <y>0.05510333949156093</y>
         <z>0.0</z>
       </interface_config>
       <interface_config>
         se.sics.cooja.mspmote.interfaces.MspMoteID
         <id>3</id>
+      </interface_config>
+      <motetype_identifier>z11</motetype_identifier>
+    </mote>
+    <mote>
+      <breakpoints />
+      <interface_config>
+        se.sics.cooja.interfaces.Position
+        <x>-9.300988083448223</x>
+        <y>119.96897703309914</y>
+        <z>0.0</z>
+      </interface_config>
+      <interface_config>
+        se.sics.cooja.mspmote.interfaces.MspMoteID
+        <id>4</id>
+      </interface_config>
+      <motetype_identifier>z11</motetype_identifier>
+    </mote>
+    <mote>
+      <breakpoints />
+      <interface_config>
+        se.sics.cooja.interfaces.Position
+        <x>100.79537548319735</x>
+        <y>141.70774945708646</y>
+        <z>0.0</z>
+      </interface_config>
+      <interface_config>
+        se.sics.cooja.mspmote.interfaces.MspMoteID
+        <id>5</id>
+      </interface_config>
+      <motetype_identifier>z11</motetype_identifier>
+    </mote>
+    <mote>
+      <breakpoints />
+      <interface_config>
+        se.sics.cooja.interfaces.Position
+        <x>22.95654519085557</x>
+        <y>91.91894809892193</y>
+        <z>0.0</z>
+      </interface_config>
+      <interface_config>
+        se.sics.cooja.mspmote.interfaces.MspMoteID
+        <id>6</id>
+      </interface_config>
+      <motetype_identifier>z11</motetype_identifier>
+    </mote>
+    <mote>
+      <breakpoints />
+      <interface_config>
+        se.sics.cooja.interfaces.Position
+        <x>88.87411318617202</x>
+        <y>36.52014095392194</y>
+        <z>0.0</z>
+      </interface_config>
+      <interface_config>
+        se.sics.cooja.mspmote.interfaces.MspMoteID
+        <id>7</id>
+      </interface_config>
+      <motetype_identifier>z11</motetype_identifier>
+    </mote>
+    <mote>
+      <breakpoints />
+      <interface_config>
+        se.sics.cooja.interfaces.Position
+        <x>78.35535233585557</x>
+        <y>105.94396256601053</y>
+        <z>0.0</z>
+      </interface_config>
+      <interface_config>
+        se.sics.cooja.mspmote.interfaces.MspMoteID
+        <id>8</id>
+      </interface_config>
+      <motetype_identifier>z11</motetype_identifier>
+    </mote>
+    <mote>
+      <breakpoints />
+      <interface_config>
+        se.sics.cooja.interfaces.Position
+        <x>30.670303147754304</x>
+        <y>35.11763950721308</y>
+        <z>0.0</z>
+      </interface_config>
+      <interface_config>
+        se.sics.cooja.mspmote.interfaces.MspMoteID
+        <id>9</id>
       </interface_config>
       <motetype_identifier>z11</motetype_identifier>
     </mote>
@@ -122,7 +206,7 @@
       <skin>se.sics.cooja.plugins.skins.LEDVisualizerSkin</skin>
       <skin>se.sics.cooja.plugins.skins.AddressVisualizerSkin</skin>
       <skin>se.sics.cooja.plugins.skins.TrafficVisualizerSkin</skin>
-      <viewport>4.035379689457825 0.0 0.0 4.035379689457825 -60.022783629050416 -20.688339891038925</viewport>
+      <viewport>1.4260234844628803 0.0 0.0 1.4260234844628803 87.26342743570655 37.92142134381272</viewport>
     </plugin_config>
     <width>314</width>
     <z>0</z>
@@ -160,6 +244,12 @@
       <mote>0</mote>
       <mote>1</mote>
       <mote>2</mote>
+      <mote>3</mote>
+      <mote>4</mote>
+      <mote>5</mote>
+      <mote>6</mote>
+      <mote>7</mote>
+      <mote>8</mote>
       <showRadioRXTX />
       <showRadioHW />
       <showLEDs />

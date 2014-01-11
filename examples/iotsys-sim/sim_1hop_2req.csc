@@ -9,7 +9,7 @@
   <simulation>
     <title>REST with RPL router</title>
     <speedlimit>1.0</speedlimit>
-    <randomseed>123456</randomseed>
+    <randomseed>123460</randomseed>
     <motedelay_us>1000000</motedelay_us>
     <radiomedium>
       se.sics.cooja.radiomediums.UDGM
@@ -45,9 +45,9 @@
       se.sics.cooja.mspmote.Z1MoteType
       <identifier>z11</identifier>
       <description>smart-meter</description>
-      <source EXPORT="discard">[CONTIKI_DIR]/examples/er-smart-meter/er-smart-meter.c</source>
-      <commands EXPORT="discard">make er-smart-meter.z1 TARGET=z1</commands>
-      <firmware EXPORT="copy">[CONTIKI_DIR]/examples/er-smart-meter/er-smart-meter.z1</firmware>
+      <source EXPORT="discard">[CONTIKI_DIR]/examples/iotsys-sim/er-obix-server.c</source>
+      <commands EXPORT="discard">make er-obix-server.z1 TARGET=z1</commands>
+      <firmware EXPORT="copy">[CONTIKI_DIR]/examples/iotsys-sim/er-obix-server.z1</firmware>
       <moteinterface>se.sics.cooja.interfaces.Position</moteinterface>
       <moteinterface>se.sics.cooja.interfaces.RimeAddress</moteinterface>
       <moteinterface>se.sics.cooja.interfaces.IPAddress</moteinterface>
@@ -89,6 +89,20 @@
       </interface_config>
       <motetype_identifier>z11</motetype_identifier>
     </mote>
+    <mote>
+      <breakpoints />
+      <interface_config>
+        se.sics.cooja.interfaces.Position
+        <x>32.716322574044675</x>
+        <y>28.916322346539</y>
+        <z>0.0</z>
+      </interface_config>
+      <interface_config>
+        se.sics.cooja.mspmote.interfaces.MspMoteID
+        <id>3</id>
+      </interface_config>
+      <motetype_identifier>z11</motetype_identifier>
+    </mote>
   </simulation>
   <plugin>
     se.sics.cooja.plugins.SimControl
@@ -108,7 +122,7 @@
       <skin>se.sics.cooja.plugins.skins.LEDVisualizerSkin</skin>
       <skin>se.sics.cooja.plugins.skins.AddressVisualizerSkin</skin>
       <skin>se.sics.cooja.plugins.skins.TrafficVisualizerSkin</skin>
-      <viewport>3.0501373231023954 0.0 0.0 3.0501373231023954 -65.2587808393469 -44.766032822269295</viewport>
+      <viewport>4.035379689457825 0.0 0.0 4.035379689457825 -60.022783629050416 -20.688339891038925</viewport>
     </plugin_config>
     <width>314</width>
     <z>0</z>
@@ -123,7 +137,7 @@
       <coloring />
     </plugin_config>
     <width>816</width>
-    <z>5</z>
+    <z>1</z>
     <height>341</height>
     <location_x>659</location_x>
     <location_y>15</location_y>
@@ -135,7 +149,7 @@
       <analyzers name="6lowpan" />
     </plugin_config>
     <width>770</width>
-    <z>1</z>
+    <z>2</z>
     <height>466</height>
     <location_x>640</location_x>
     <location_y>278</location_y>
@@ -145,15 +159,16 @@
     <plugin_config>
       <mote>0</mote>
       <mote>1</mote>
+      <mote>2</mote>
       <showRadioRXTX />
       <showRadioHW />
       <showLEDs />
       <showWatchpoints />
       <split>125</split>
-      <zoomfactor>20000.0</zoomfactor>
+      <zoomfactor>100000.0</zoomfactor>
     </plugin_config>
     <width>1475</width>
-    <z>2</z>
+    <z>4</z>
     <height>267</height>
     <location_x>-7</location_x>
     <location_y>715</location_y>
@@ -162,7 +177,7 @@
     SerialSocketServer
     <mote_arg>0</mote_arg>
     <width>422</width>
-    <z>4</z>
+    <z>5</z>
     <height>87</height>
     <location_x>217</location_x>
     <location_y>51</location_y>
