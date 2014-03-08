@@ -86,6 +86,8 @@
 #define REMOTE_PORT     UIP_HTONS(COAP_DEFAULT_PORT)
 
 #define TOGGLE_INTERVAL 10
+/* toggle between continuous requests or limited to 10 requests */
+#define CONTINUOUS 1
 
 PROCESS(coap_client_example, "COAP Client Example");
 AUTOSTART_PROCESSES(&coap_client_example);
@@ -131,7 +133,9 @@ PROCESS_THREAD(coap_client_example, ev, data)
 {
   PROCESS_BEGIN();
 
+#if CONTINUOUS == 0
   static int count = 0;
+#endif /* CONTINUOUS */
   static int active = 0;
   received = 1;
 
@@ -176,13 +180,16 @@ PROCESS_THREAD(coap_client_example, ev, data)
 
         PRINTF("after request: %i\n", received);
 
-        count++;
         PRINTF("--Done--\n");
+
+#if CONTINUOUS == 0
+        count++;
         if (count >= 10)
         {
           active = 0;
           printf("LAST!\n");
         }
+#endif /* CONTINUOUS */
       }
       etimer_reset(&et);
     }
@@ -190,7 +197,9 @@ PROCESS_THREAD(coap_client_example, ev, data)
     if (ev == sensors_event && data == &button_sensor)
     {
       printf("starting!\n");
+#if CONTINUOUS == 0
       count = 0;
+#endif /* CONTINUOUS */
       active = 1;
     }
   }

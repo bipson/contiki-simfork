@@ -11,9 +11,19 @@ PRELIMINARIES
    You can disable RDC in border-router project-conf.h (not really required as BR keeps radio turned on).
    #undef NETSTACK_CONF_RDC
    #define NETSTACK_CONF_RDC     nullrdc_driver
+   or
+   #define NETSTACK_CONF_CONTIKIMAC
 -  Confirm that cooja is built and running
 -  Optional: Save your target as default target
    $ make TARGET=sky savetarget
+-  Enable powertrace for server with POWERTRACE=1 in Makefile
+-  adjust payload size in er-obix-server.c (currently up to 128B)
+
+Simulation descriptions:
+==============================
+
+sim_Xhop_Yreq{_i}.csc     CoAP part of a set of simulations to compare HTTP to CoAP under certain scenarios. X is the number of hops the request must pass, Y is the number of simultaneous requests made. '_i' marks simulations with requester/client inside of the mote.
+
 
 How to run simulations:
 ==============================
@@ -33,27 +43,21 @@ http requests can be simulated the same way by using the respective files in ../
 For simulations with requester/client outside of cooja (HTTP vs CoAP tests):
 ------------------------------------
 
-1) limit simulation speed to 100% (yes, there is a little bit of clock skew)
+1) limit simulation speed to 100% (yes, there can be a little bit of clock skew)
 2) in cooja: start simulation (if more than 2 servers directly connected to border router, right click on border router node (node 1) and "push button" to rebuild RPL DAG some time after simulation has started)
 3) issue: sh request_loopX.sh <timeout> (replace 'X' with 1/2/4, number of requests sent out -> use same number as used for Xreq in the topology, <timeout> is number of seconds for the script to output ERROR if request not finished until then)
 4) wait for script output, it will ping the nodes and start the requests only if they are all reachable (rebuild RPL DAG if necessary) 
 5) script output shows ERROR for all requests that did not work, OK if requests ok
 
-Simulation descriptions:
-==============================
-sim_Xhop_Yreq.csc     CoAP part of a set of simulations to compare HTTP to CoAP under certain scenarios. X is the number of hops the request must pass, Y is the number of simultaneous requests made.
-
 Other notes:
 -------------------
-- adjust payload size in er-smart-meter.c (currently up to 128B)
-
 
 Known Issues:
-- Clock skew should be measured to know uncertainty of results
+- Clock skew should be measured to know uncertainty of results (for simulations where external clients are involved)
 - Hopefully the used clients reliably answer ERROR on error
-- Rebuilding the DAG might be necessary for a few consecutive times. On the other hand, the border router sometimes just needs a little see to find all nodes. Script will retry until all nodes reached.
-- Depending on the host of the VM, it might be necessary to restart VirtualBox completely (at least under linux sometimes the modul runs amok and causes strange clock behavior)
+- Rebuilding the DAG might be necessary for a few consecutive times. On the other hand, the border router sometimes just needs a little see to find all nodes. Script for external requests will retry until all nodes reached via ping.
+- Depending on the host of the VM, it might be necessary to restart VirtualBox completely (at least under linux sometimes the respective kernel modul runs amok and causes strange clock behavior)
 - Disabling "internet clock"/ntp daemon on VM guest system is most certainly a good idea to avoid strange clock behavior
 
 TODO:
-Automate simulation with cooja test scripts (also save simulation output automatically)
+Automate simulation with cooja test scripts (also save simulation output automatically) - looks feasible but does not seem to solve a lot yet because the simulations must be supervised.
