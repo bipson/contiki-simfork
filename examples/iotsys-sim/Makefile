@@ -4,7 +4,7 @@ all: er-obix-server er-obix-requester
 #PROJECT_SOURCEFILES += static-routing.c 
 
 #for powertrace
-WITH_POWERTRACE=1
+WITH_POWERTRACE=0
 
 # variable for this Makefile
 # configure CoAP implementation (3|7|12|13) (er-coap-07 also supports CoAP draft 08)

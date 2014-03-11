@@ -87,7 +87,8 @@
 
 #define TOGGLE_INTERVAL 10
 /* toggle between continuous requests or limited to 10 requests */
-#define CONTINUOUS 1
+#define CONTINUOUS 0
+#define WAIT_AFTER_SEND 1
 
 PROCESS(coap_client_example, "COAP Client Example");
 AUTOSTART_PROCESSES(&coap_client_example);
@@ -100,7 +101,7 @@ static struct etimer et;
 
 /* leading and ending slashes only for demo purposes, get cropped automatically when setting the Uri-Path */
 char* service_url = "h";
-static int received;
+static int exp_response;
 
 /* This function is will be passed to COAP_BLOCKING_REQUEST() to handle responses. */
 void
@@ -116,7 +117,7 @@ client_chunk_handler(void *response)
   if (!more)
   {
     printf("OK\n");
-    received = 1;
+    exp_response = 0;
   }
 }
 
@@ -137,7 +138,8 @@ PROCESS_THREAD(coap_client_example, ev, data)
   static int count = 0;
 #endif /* CONTINUOUS */
   static int active = 0;
-  received = 1;
+	static int idle = 0;
+  exp_response = 0;
 
   SERVER_NODE(&server_ipaddr, 2);
 #if 0
@@ -161,36 +163,58 @@ PROCESS_THREAD(coap_client_example, ev, data)
       // timer is always running and resetting, we just hook in
       if (active)
       {
-        PRINTF("before request: %i\n", received);
         PRINTF("--Toggle timer--\n");
-        if (received == 0) {
+        if (exp_response == 1)
+				{
           process_exit(&request_proc);
           printf("ERROR\n");
-        }
+					exp_response = 0;
+				}
+#if CONTINUOUS == 0
+				if (count >= 10)
+				{
+          process_exit(&request_proc);
+					active = 0;
+					goto done;
+				}
+#endif /* CONTINUOUS */
+				
+				/* only send next request if idling over */
+				if (idle == 0)
+				{
+#if WAIT_AFTER_SEND == 1
+					idle = 1;
+#endif /* WAIT_AFTER_SEND */
+					/* prepare request, TID is set by COAP_BLOCKING_REQUEST() */
+					coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0 );
+					coap_set_header_uri_path(request, service_url);
 
-        /* prepare request, TID is set by COAP_BLOCKING_REQUEST() */
-        coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0 );
-        coap_set_header_uri_path(request, service_url);
+					PRINT6ADDR(&server_ipaddr);
+					PRINTF(" : %u\n", UIP_HTONS(REMOTE_PORT));
 
-        PRINT6ADDR(&server_ipaddr);
-        PRINTF(" : %u\n", UIP_HTONS(REMOTE_PORT));
-
-        received = 0;
-        process_start(&request_proc, NULL);
-
-        PRINTF("after request: %i\n", received);
-
-        PRINTF("--Done--\n");
+					exp_response = 1;
+					printf("Sending request\n");
+					process_start(&request_proc, NULL);
 
 #if CONTINUOUS == 0
-        count++;
-        if (count >= 10)
-        {
-          active = 0;
-          printf("LAST!\n");
-        }
+					count++;
+					if (count >= 10)
+					{
+						printf("LAST!\n");
+					}
 #endif /* CONTINUOUS */
+
+					PRINTF("--Done--\n");
+				}
+				else
+				{
+					/* toogle waiting */
+					printf("toggling idle\n");
+					idle = 0;
+				}
+
       }
+done:
       etimer_reset(&et);
     }
 
