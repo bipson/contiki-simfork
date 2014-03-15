@@ -193,7 +193,7 @@ PROCESS_THREAD(coap_client_example, ev, data)
 					PRINTF(" : %u\n", UIP_HTONS(REMOTE_PORT));
 
 					exp_response = 1;
-					printf("Sending request\n");
+					PRINTF("Sending request\n");
 					process_start(&request_proc, NULL);
 
 #if CONTINUOUS == 0
@@ -209,7 +209,7 @@ PROCESS_THREAD(coap_client_example, ev, data)
 				else
 				{
 					/* toogle waiting */
-					printf("toggling idle\n");
+					PRINTF("toggling idle\n");
 					idle = 0;
 				}
 

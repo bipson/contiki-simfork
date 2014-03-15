@@ -8,7 +8,7 @@
   <project EXPORT="discard">[APPS_DIR]/powertracker</project>
   <simulation>
     <title>REST with RPL router</title>
-    <randomseed>123457</randomseed>
+    <randomseed>123459</randomseed>
     <motedelay_us>1000000</motedelay_us>
     <radiomedium>
       se.sics.cooja.radiomediums.UDGM
@@ -104,8 +104,8 @@
       <breakpoints />
       <interface_config>
         se.sics.cooja.interfaces.Position
-        <x>354.146678461733</x>
-        <y>183.97421403023597</y>
+        <x>373.4647456881643</x>
+        <y>147.01774438312103</y>
         <z>0.0</z>
       </interface_config>
       <interface_config>
@@ -118,8 +118,8 @@
       <breakpoints />
       <interface_config>
         se.sics.cooja.interfaces.Position
-        <x>214.72016060854443</x>
-        <y>52.05864724791473</y>
+        <x>39.27965476700838</x>
+        <y>81.50751564175299</y>
         <z>0.0</z>
       </interface_config>
       <interface_config>
@@ -314,8 +314,8 @@
       <breakpoints />
       <interface_config>
         se.sics.cooja.interfaces.Position
-        <x>19.59909790978993</x>
-        <y>120.43995540909546</y>
+        <x>16.890082918692727</x>
+        <y>114.67725171333174</y>
         <z>0.0</z>
       </interface_config>
       <interface_config>
@@ -328,8 +328,8 @@
       <breakpoints />
       <interface_config>
         se.sics.cooja.interfaces.Position
-        <x>39.7910339597893</x>
-        <y>93.12182251757555</y>
+        <x>358.53836445595385</x>
+        <y>185.16294086543658</y>
         <z>0.0</z>
       </interface_config>
       <interface_config>
@@ -342,64 +342,8 @@
       <breakpoints />
       <interface_config>
         se.sics.cooja.interfaces.Position
-        <x>68.53525664855188</x>
-        <y>72.59023488274514</y>
-        <z>0.0</z>
-      </interface_config>
-      <interface_config>
-        se.sics.cooja.mspmote.interfaces.MspMoteID
-        <id>18</id>
-      </interface_config>
-      <motetype_identifier>z13</motetype_identifier>
-    </mote>
-    <mote>
-      <breakpoints />
-      <interface_config>
-        se.sics.cooja.interfaces.Position
-        <x>100.56453335888733</x>
-        <y>51.237383742521516</y>
-        <z>0.0</z>
-      </interface_config>
-      <interface_config>
-        se.sics.cooja.mspmote.interfaces.MspMoteID
-        <id>19</id>
-      </interface_config>
-      <motetype_identifier>z13</motetype_identifier>
-    </mote>
-    <mote>
-      <breakpoints />
-      <interface_config>
-        se.sics.cooja.interfaces.Position
-        <x>137.52139110158208</x>
-        <y>43.02474868858935</y>
-        <z>0.0</z>
-      </interface_config>
-      <interface_config>
-        se.sics.cooja.mspmote.interfaces.MspMoteID
-        <id>20</id>
-      </interface_config>
-      <motetype_identifier>z13</motetype_identifier>
-    </mote>
-    <mote>
-      <breakpoints />
-      <interface_config>
-        se.sics.cooja.interfaces.Position
-        <x>176.12077585506327</x>
-        <y>44.66727569937578</y>
-        <z>0.0</z>
-      </interface_config>
-      <interface_config>
-        se.sics.cooja.mspmote.interfaces.MspMoteID
-        <id>21</id>
-      </interface_config>
-      <motetype_identifier>z13</motetype_identifier>
-    </mote>
-    <mote>
-      <breakpoints />
-      <interface_config>
-        se.sics.cooja.interfaces.Position
-        <x>181.909519874797</x>
-        <y>306.23247752669903</y>
+        <x>302.14981313427</x>
+        <y>205.06478250838384</y>
         <z>0.0</z>
       </interface_config>
       <interface_config>
@@ -412,7 +356,7 @@
   <plugin>
     se.sics.cooja.plugins.SimControl
     <width>292</width>
-    <z>1</z>
+    <z>0</z>
     <height>190</height>
     <location_x>0</location_x>
     <location_y>0</location_y>
@@ -427,10 +371,10 @@
       <skin>se.sics.cooja.plugins.skins.LEDVisualizerSkin</skin>
       <skin>se.sics.cooja.plugins.skins.AddressVisualizerSkin</skin>
       <skin>se.sics.cooja.plugins.skins.TrafficVisualizerSkin</skin>
-      <viewport>1.2059185491763291 0.0 0.0 1.2059185491763291 85.63193571122217 -9.291425009669709</viewport>
+      <viewport>1.2059185491763291 0.0 0.0 1.2059185491763291 83.63193571122217 -16.291425009669727</viewport>
     </plugin_config>
     <width>612</width>
-    <z>0</z>
+    <z>1</z>
     <height>486</height>
     <location_x>12</location_x>
     <location_y>211</location_y>
@@ -444,7 +388,7 @@
     </plugin_config>
     <width>816</width>
     <z>2</z>
-    <height>341</height>
+    <height>627</height>
     <location_x>659</location_x>
     <location_y>15</location_y>
   </plugin>
@@ -484,10 +428,6 @@
       <mote>15</mote>
       <mote>16</mote>
       <mote>17</mote>
-      <mote>18</mote>
-      <mote>19</mote>
-      <mote>20</mote>
-      <mote>21</mote>
       <showRadioRXTX />
       <showRadioHW />
       <showLEDs />

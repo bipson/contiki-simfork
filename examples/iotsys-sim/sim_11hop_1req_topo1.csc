@@ -118,8 +118,8 @@
       <breakpoints />
       <interface_config>
         se.sics.cooja.interfaces.Position
-        <x>11.085379106166444</x>
-        <y>196.77234849048912</y>
+        <x>20.2070565258506</x>
+        <y>236.57603177638364</y>
         <z>0.0</z>
       </interface_config>
       <interface_config>
@@ -272,20 +272,6 @@
       <breakpoints />
       <interface_config>
         se.sics.cooja.interfaces.Position
-        <x>12.289114969556067</x>
-        <y>239.42179671981876</y>
-        <z>0.0</z>
-      </interface_config>
-      <interface_config>
-        se.sics.cooja.mspmote.interfaces.MspMoteID
-        <id>13</id>
-      </interface_config>
-      <motetype_identifier>z13</motetype_identifier>
-    </mote>
-    <mote>
-      <breakpoints />
-      <interface_config>
-        se.sics.cooja.interfaces.Position
         <x>358.53836445595385</x>
         <y>139.5545537670158</y>
         <z>0.0</z>
@@ -300,7 +286,7 @@
   <plugin>
     se.sics.cooja.plugins.SimControl
     <width>292</width>
-    <z>0</z>
+    <z>2</z>
     <height>190</height>
     <location_x>0</location_x>
     <location_y>0</location_y>
@@ -318,7 +304,7 @@
       <viewport>1.2059185491763291 0.0 0.0 1.2059185491763291 85.63193571122217 -9.291425009669709</viewport>
     </plugin_config>
     <width>612</width>
-    <z>1</z>
+    <z>0</z>
     <height>486</height>
     <location_x>12</location_x>
     <location_y>211</location_y>
@@ -331,7 +317,7 @@
       <coloring />
     </plugin_config>
     <width>816</width>
-    <z>2</z>
+    <z>1</z>
     <height>341</height>
     <location_x>659</location_x>
     <location_y>15</location_y>
@@ -367,7 +353,6 @@
       <mote>10</mote>
       <mote>11</mote>
       <mote>12</mote>
-      <mote>13</mote>
       <showRadioRXTX />
       <showRadioHW />
       <showLEDs />

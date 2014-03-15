@@ -8,7 +8,7 @@
   <project EXPORT="discard">[APPS_DIR]/powertracker</project>
   <simulation>
     <title>REST with RPL router</title>
-    <randomseed>123459</randomseed>
+    <randomseed>123470</randomseed>
     <motedelay_us>1000000</motedelay_us>
     <radiomedium>
       se.sics.cooja.radiomediums.UDGM
@@ -104,8 +104,8 @@
       <breakpoints />
       <interface_config>
         se.sics.cooja.interfaces.Position
-        <x>351.9044172416381</x>
-        <y>180.18748045469977</y>
+        <x>373.4647456881643</x>
+        <y>147.01774438312103</y>
         <z>0.0</z>
       </interface_config>
       <interface_config>
@@ -118,8 +118,8 @@
       <breakpoints />
       <interface_config>
         se.sics.cooja.interfaces.Position
-        <x>11.085379106166444</x>
-        <y>196.77234849048912</y>
+        <x>12.743865909745383</x>
+        <y>199.26007869585757</y>
         <z>0.0</z>
       </interface_config>
       <interface_config>
@@ -287,7 +287,21 @@
       <interface_config>
         se.sics.cooja.interfaces.Position
         <x>358.53836445595385</x>
-        <y>139.5545537670158</y>
+        <y>185.16294086543658</y>
+        <z>0.0</z>
+      </interface_config>
+      <interface_config>
+        se.sics.cooja.mspmote.interfaces.MspMoteID
+        <id>17</id>
+      </interface_config>
+      <motetype_identifier>z13</motetype_identifier>
+    </mote>
+    <mote>
+      <breakpoints />
+      <interface_config>
+        se.sics.cooja.interfaces.Position
+        <x>302.14981313427</x>
+        <y>205.06478250838384</y>
         <z>0.0</z>
       </interface_config>
       <interface_config>
@@ -300,7 +314,7 @@
   <plugin>
     se.sics.cooja.plugins.SimControl
     <width>292</width>
-    <z>0</z>
+    <z>1</z>
     <height>190</height>
     <location_x>0</location_x>
     <location_y>0</location_y>
@@ -315,10 +329,10 @@
       <skin>se.sics.cooja.plugins.skins.LEDVisualizerSkin</skin>
       <skin>se.sics.cooja.plugins.skins.AddressVisualizerSkin</skin>
       <skin>se.sics.cooja.plugins.skins.TrafficVisualizerSkin</skin>
-      <viewport>1.2059185491763291 0.0 0.0 1.2059185491763291 85.63193571122217 -9.291425009669709</viewport>
+      <viewport>1.2059185491763291 0.0 0.0 1.2059185491763291 83.63193571122217 -16.291425009669727</viewport>
     </plugin_config>
     <width>612</width>
-    <z>1</z>
+    <z>0</z>
     <height>486</height>
     <location_x>12</location_x>
     <location_y>211</location_y>
@@ -332,7 +346,7 @@
     </plugin_config>
     <width>816</width>
     <z>2</z>
-    <height>341</height>
+    <height>627</height>
     <location_x>659</location_x>
     <location_y>15</location_y>
   </plugin>
@@ -368,6 +382,7 @@
       <mote>11</mote>
       <mote>12</mote>
       <mote>13</mote>
+      <mote>14</mote>
       <showRadioRXTX />
       <showRadioHW />
       <showLEDs />

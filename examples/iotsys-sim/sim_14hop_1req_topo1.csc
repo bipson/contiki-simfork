@@ -8,7 +8,7 @@
   <project EXPORT="discard">[APPS_DIR]/powertracker</project>
   <simulation>
     <title>REST with RPL router</title>
-    <randomseed>123457</randomseed>
+    <randomseed>123459</randomseed>
     <motedelay_us>1000000</motedelay_us>
     <radiomedium>
       se.sics.cooja.radiomediums.UDGM
@@ -346,7 +346,7 @@
       <viewport>1.2059185491763291 0.0 0.0 1.2059185491763291 85.63193571122217 -9.291425009669709</viewport>
     </plugin_config>
     <width>612</width>
-    <z>0</z>
+    <z>2</z>
     <height>486</height>
     <location_x>12</location_x>
     <location_y>211</location_y>
@@ -359,8 +359,8 @@
       <coloring />
     </plugin_config>
     <width>816</width>
-    <z>2</z>
-    <height>341</height>
+    <z>0</z>
+    <height>656</height>
     <location_x>659</location_x>
     <location_y>15</location_y>
   </plugin>
