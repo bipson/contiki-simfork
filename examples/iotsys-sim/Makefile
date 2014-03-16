@@ -1,4 +1,4 @@
-all: er-obix-server er-obix-requester
+all: er-obix-server er-obix-requester er-obix-gpost-client er-obix-gpost-server
 # Use this target explicitly if requried: er-plugtest-server
 
 #PROJECT_SOURCEFILES += static-routing.c 
