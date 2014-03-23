@@ -67,7 +67,7 @@
 #endif
 
 
-#define DEBUG 0
+#define DEBUG 1
 #if DEBUG
 #define PRINTF(...) printf(__VA_ARGS__)
 #define PRINT6ADDR(addr) PRINTF("[%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x]", ((uint8_t *)addr)[0], ((uint8_t *)addr)[1], ((uint8_t *)addr)[2], ((uint8_t *)addr)[3], ((uint8_t *)addr)[4], ((uint8_t *)addr)[5], ((uint8_t *)addr)[6], ((uint8_t *)addr)[7], ((uint8_t *)addr)[8], ((uint8_t *)addr)[9], ((uint8_t *)addr)[10], ((uint8_t *)addr)[11], ((uint8_t *)addr)[12], ((uint8_t *)addr)[13], ((uint8_t *)addr)[14], ((uint8_t *)addr)[15])
@@ -87,7 +87,7 @@
 
 #define TOGGLE_INTERVAL 10
 /* continuous requests or limited to 10 requests */
-#define CONTINUOUS 1
+#define CONTINUOUS 0
 
 PROCESS(coap_client_example, "COAP Client Example");
 AUTOSTART_PROCESSES(&coap_client_example);
@@ -147,19 +147,11 @@ PROCESS_THREAD(coap_client_example, ev, data)
       if (active)
       {
         PRINTF("--Toggle timer--\n");
-#if CONTINUOUS == 0
-				if (count >= 10)
-				{
-          process_exit(&request_proc);
-					active = 0;
-					goto done;
-				}
-#endif /* CONTINUOUS */
 			
 				for(i=0;i<=3;i++)
 				{
 					/* prepare request, TID is set by COAP_BLOCKING_REQUEST() */
-					coap_init_message(request, COAP_TYPE_CON, COAP_POST, 0 );
+					coap_init_message(request, COAP_TYPE_NON, COAP_POST, 0 );
 					coap_set_header_uri_path(request, service_url);
 
 					/* TODO add payload */
@@ -176,6 +168,7 @@ PROCESS_THREAD(coap_client_example, ev, data)
 				if (count >= 10)
 				{
 					printf("LAST!\n");
+					active = 0;
 				}
 #endif /* CONTINUOUS */
 
