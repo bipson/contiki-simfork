@@ -150,7 +150,7 @@ PROCESS_THREAD(coap_client_example, ev, data)
       {
         PRINTF("--Toggle timer--\n");
 
-        for(i = 0; i <= 4; i++) { 
+        for(i = 0; i < 4; i++) { 
           /* prepare request, TID is set by COAP_BLOCKING_REQUEST() */
           coap_init_message(&request[i], COAP_TYPE_NON, COAP_POST, 0 );
           coap_set_header_uri_path(&request[i], service_url);
@@ -161,7 +161,7 @@ PROCESS_THREAD(coap_client_example, ev, data)
           PRINTF(" : %u\n", UIP_HTONS(REMOTE_PORT));
 
           PRINTF("Sending request\n");
-          COAP_REQUEST(&server_ipaddr[i], REMOTE_PORT, request);
+          COAP_REQUEST(&server_ipaddr[i], REMOTE_PORT, &request[i]);
         }
 
 #if CONTINUOUS == 0
