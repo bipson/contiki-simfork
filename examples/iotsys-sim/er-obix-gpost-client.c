@@ -93,14 +93,15 @@ PROCESS(coap_client_example, "COAP Client Example");
 AUTOSTART_PROCESSES(&coap_client_example);
 
 uip_ipaddr_t server_ipaddr[4];
-static coap_packet_t request[1]; /* This way the packet can be treated as pointer as usual. */
+static coap_packet_t request[4];
 static struct etimer et;
 
 /* leading and ending slashes only for demo purposes, get cropped automatically when setting the Uri-Path */
 char* service_url = "h";
 
+#if 0
 /* This function is will be passed to COAP_BLOCKING_REQUEST() to handle responses. */
-void
+  void
 client_chunk_handler(void *response)
 {
   uint32_t num;
@@ -115,6 +116,7 @@ client_chunk_handler(void *response)
     printf("OK\n");
   }
 }
+#endif /* 0 */
 
 PROCESS_THREAD(coap_client_example, ev, data)
 {
@@ -124,7 +126,7 @@ PROCESS_THREAD(coap_client_example, ev, data)
   static int count = 0;
 #endif /* CONTINUOUS */
   static int active = 0;
-	static int i = 0;
+  static int i = 0;
 
   SERVER_NODE(&server_ipaddr[0], 2);
   SERVER_NODE(&server_ipaddr[1], 3);
@@ -137,7 +139,7 @@ PROCESS_THREAD(coap_client_example, ev, data)
   SENSORS_ACTIVATE(button_sensor);
 
   etimer_set(&et, TOGGLE_INTERVAL * CLOCK_SECOND);
-	
+
   while(1) {
     PROCESS_YIELD();
 
@@ -147,32 +149,31 @@ PROCESS_THREAD(coap_client_example, ev, data)
       if (active)
       {
         PRINTF("--Toggle timer--\n");
-			
-				for(i=0;i<=3;i++)
-				{
-					/* prepare request, TID is set by COAP_BLOCKING_REQUEST() */
-					coap_init_message(request, COAP_TYPE_NON, COAP_POST, 0 );
-					coap_set_header_uri_path(request, service_url);
 
-					/* TODO add payload */
+        for(i = 0; i <= 4; i++) { 
+          /* prepare request, TID is set by COAP_BLOCKING_REQUEST() */
+          coap_init_message(&request[i], COAP_TYPE_NON, COAP_POST, 0 );
+          coap_set_header_uri_path(&request[i], service_url);
 
-					PRINT6ADDR(&server_ipaddr[i]);
-					PRINTF(" : %u\n", UIP_HTONS(REMOTE_PORT));
+          /* TODO add payload */
 
-					PRINTF("Sending request\n");
-					COAP_BLOCKING_REQUEST(&server_ipaddr[i], REMOTE_PORT, request, client_chunk_handler);
-				}
+          PRINT6ADDR(&server_ipaddr[i]);
+          PRINTF(" : %u\n", UIP_HTONS(REMOTE_PORT));
+
+          PRINTF("Sending request\n");
+          COAP_REQUEST(&server_ipaddr[i], REMOTE_PORT, request);
+        }
 
 #if CONTINUOUS == 0
-				count++;
-				if (count >= 10)
-				{
-					printf("LAST!\n");
-					active = 0;
-				}
+        count++;
+        if (count >= 10)
+        {
+          printf("LAST!\n");
+          active = 0;
+        }
 #endif /* CONTINUOUS */
 
-				PRINTF("--Done--\n");
+        PRINTF("--Done--\n");
       }
       etimer_reset(&et);
     }
