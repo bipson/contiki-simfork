@@ -92,7 +92,7 @@
 PROCESS(coap_client_example, "COAP Client Example");
 AUTOSTART_PROCESSES(&coap_client_example);
 
-uip_ipaddr_t server_ipaddr[4];
+static uip_ipaddr_t server_ipaddr[4];
 static coap_packet_t request[4];
 static struct etimer et;
 
