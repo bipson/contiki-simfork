@@ -44,7 +44,7 @@
 
 #include "er-coap-13-engine.h"
 
-#define DEBUG 1
+#define DEBUG 0
 #if DEBUG
 #define PRINTF(...) printf(__VA_ARGS__)
 #define PRINT6ADDR(addr) PRINTF("[%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x]", ((uint8_t *)addr)[0], ((uint8_t *)addr)[1], ((uint8_t *)addr)[2], ((uint8_t *)addr)[3], ((uint8_t *)addr)[4], ((uint8_t *)addr)[5], ((uint8_t *)addr)[6], ((uint8_t *)addr)[7], ((uint8_t *)addr)[8], ((uint8_t *)addr)[9], ((uint8_t *)addr)[10], ((uint8_t *)addr)[11], ((uint8_t *)addr)[12], ((uint8_t *)addr)[13], ((uint8_t *)addr)[14], ((uint8_t *)addr)[15])
@@ -588,52 +588,6 @@ PT_THREAD(coap_blocking_request(struct request_state_t *state, process_event_t e
       PT_EXIT(&state->pt);
     }
   } while (more && block_error<COAP_MAX_ATTEMPTS);
-
-  PT_END(&state->pt);
-}
-
-/*----------------------------------------------------------------------------*/
-PT_THREAD(coap_request(struct request_state_t *state, process_event_t ev,
-                                uip_ipaddr_t *remote_ipaddr, uint16_t remote_port,
-                                coap_packet_t *request)) {
-  PT_BEGIN(&state->pt);
-
-  static uint8_t more;
-  static uint32_t res_block;
-  static uint8_t block_error;
-
-  state->block_num = 0;
-  state->response = NULL;
-  state->process = PROCESS_CURRENT();
-
-  more = 0;
-  res_block = 0;
-  block_error = 0;
-
-  request->mid = coap_get_mid();
-  if ((state->transaction = coap_new_transaction(request->mid, remote_ipaddr, remote_port)))
-  {
-    /*
-       state->transaction->callback = coap_blocking_request_callback;
-       state->transaction->callback_data = state;
-       */
-
-    if (state->block_num>0)
-    {
-      coap_set_header_block2(request, state->block_num, 0, REST_MAX_CHUNK_SIZE);
-    }
-
-    state->transaction->packet_len = coap_serialize_message(request, state->transaction->packet);
-
-    coap_send_transaction(state->transaction);
-    PRINTF("Requested #%lu (MID %u)\n", state->block_num, request->mid);
-
-  }
-  else
-  {
-    PRINTF("Could not allocate transaction buffer");
-    PT_EXIT(&state->pt);
-  }
 
   PT_END(&state->pt);
 }

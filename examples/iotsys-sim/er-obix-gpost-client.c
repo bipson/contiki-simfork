@@ -99,9 +99,8 @@ static struct etimer et;
 /* leading and ending slashes only for demo purposes, get cropped automatically when setting the Uri-Path */
 char* service_url = "h";
 
-#if 0
 /* This function is will be passed to COAP_BLOCKING_REQUEST() to handle responses. */
-  void
+void
 client_chunk_handler(void *response)
 {
   uint32_t num;
@@ -116,7 +115,6 @@ client_chunk_handler(void *response)
     printf("OK\n");
   }
 }
-#endif /* 0 */
 
 PROCESS_THREAD(coap_client_example, ev, data)
 {
@@ -150,9 +148,10 @@ PROCESS_THREAD(coap_client_example, ev, data)
       {
         PRINTF("--Toggle timer--\n");
 
-        for(i = 0; i < 4; i++) { 
+        for(i = 0; i < 4; i++)
+        {
           /* prepare request, TID is set by COAP_BLOCKING_REQUEST() */
-          coap_init_message(&request[i], COAP_TYPE_NON, COAP_POST, 0 );
+          coap_init_message(&request[i], COAP_TYPE_CON, COAP_POST, 0 );
           coap_set_header_uri_path(&request[i], service_url);
 
           /* TODO add payload */
@@ -161,7 +160,7 @@ PROCESS_THREAD(coap_client_example, ev, data)
           PRINTF(" : %u\n", UIP_HTONS(REMOTE_PORT));
 
           PRINTF("Sending request\n");
-          COAP_REQUEST(&server_ipaddr[i], REMOTE_PORT, &request[i]);
+          COAP_BLOCKING_REQUEST(&server_ipaddr[i], REMOTE_PORT, &request[i], client_chunk_handler);
         }
 
 #if CONTINUOUS == 0
