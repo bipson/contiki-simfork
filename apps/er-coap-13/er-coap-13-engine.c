@@ -151,6 +151,15 @@ coap_receive(void)
             {
               if (coap_error_code==NO_ERROR)
               {
+                /* omit empty NON-response */
+                if (message->type==COAP_TYPE_NON && response->payload <= 0)
+                {
+                  /* TODO debug: exciting here prematurely */
+                  PRINTF("Omitting NON-Response with zero payload\n");
+                  coap_clear_transaction(transaction);
+                  return coap_error_code;
+                }
+                
                 /* Apply blockwise transfers. */
                 if ( IS_OPTION(message, COAP_OPTION_BLOCK1) && response->code<BAD_REQUEST_4_00 && !IS_OPTION(response, COAP_OPTION_BLOCK1) )
                 {
@@ -235,6 +244,10 @@ coap_receive(void)
           PRINTF("Received RST\n");
           /* Cancel possible subscriptions. */
           coap_remove_observer_by_mid(&UIP_IP_BUF->srcipaddr, UIP_UDP_BUF->srcport, message->mid);
+        }
+        else if (message->type==COAP_TYPE_NON)
+        {
+          PRINTF("Received NON\n");
         }
 
         if ( (transaction = coap_get_transaction_by_mid(message->mid)) )
@@ -635,6 +648,9 @@ PT_THREAD(coap_request(struct request_state_t *state, process_event_t ev,
     PT_EXIT(&state->pt);
   }
 
+  coap_clear_transaction(&state->transaction);
+
+  PT_EXIT(&state->pt);
   PT_END(&state->pt);
 }
 /*----------------------------------------------------------------------------*/
