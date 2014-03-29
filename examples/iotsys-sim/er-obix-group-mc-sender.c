@@ -131,6 +131,10 @@ PROCESS_THREAD(coap_client_example, ev, data)
   powertrace_start(CLOCK_SECOND * 10);
 #endif 
 
+  /* delay the toggle timer for some time, so it does not always coincide with
+   * the timer for powertrace */
+
+  clock_wait((TOGGLE_INTERVAL / 2) * CLOCK_SECOND);
   etimer_set(&et, TOGGLE_INTERVAL * CLOCK_SECOND);
 
   while(1) {
