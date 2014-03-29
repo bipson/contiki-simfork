@@ -47,9 +47,9 @@
 
 #include "dev/button-sensor.h"
 
-#if !UIP_CONF_IPV6_RPL && !defined (CONTIKI_TARGET_MINIMAL_NET) && !defined (CONTIKI_TARGET_NATIVE)
-#warning "Compiling with static routing!"
-#include "static-routing.h"
+#if WITH_POWERTRACE
+#warning "Compiling with powertrace!"
+#include "powertrace.h"
 #endif
 
 #include "dev/button-sensor.h"
@@ -126,6 +126,10 @@ PROCESS_THREAD(coap_client_example, ev, data)
   // coap_receiver_init();
 
   SENSORS_ACTIVATE(button_sensor);
+
+#if WITH_POWERTRACE
+  powertrace_start(CLOCK_SECOND * 10);
+#endif 
 
   etimer_set(&et, TOGGLE_INTERVAL * CLOCK_SECOND);
 
