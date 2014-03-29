@@ -1,11 +1,11 @@
-all: er-obix-server er-obix-requester er-obix-gpost-client er-obix-gpost-server er-obix-group-mc-sender
+all: er-obix-server er-obix-requester er-obix-gpost-client er-obix-gpost-server er-obix-group-mc-sender hop
 
 # Use this target explicitly if requried: er-plugtest-server
 
 #PROJECT_SOURCEFILES += static-routing.c 
 
 #for powertrace
-WITH_POWERTRACE=0
+WITH_POWERTRACE=1
 
 # variable for this Makefile
 # configure CoAP implementation (3|7|12|13) (er-coap-07 also supports CoAP draft 08)
