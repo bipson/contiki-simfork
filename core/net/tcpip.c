@@ -729,11 +729,11 @@ tcpip_ipv6_output(void)
     }
     return;
   }
-  printf("########### Now multicast\n");
+  PRINTF("########### Now multicast\n");
   // now check for transient site local mcast address.
   // these addresses should be forwarded on the rpl-border-router
   if(uip_is_addr_mcast_site_local(&UIP_IP_BUF->destipaddr) && uip_is_addr_mcast_transient(&UIP_IP_BUF->destipaddr)) {
-	 printf("##### SITE LOCAL TRANSIENT MCAST ADDRESS!\n");
+	 PRINTF("##### SITE LOCAL TRANSIENT MCAST ADDRESS!\n");
   }
   /* Multicast IP destination address. */
   tcpip_output(NULL);
