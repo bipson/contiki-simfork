@@ -151,7 +151,8 @@ PROCESS_THREAD(coap_client_example, ev, data)
         coap_init_message(&request, COAP_TYPE_NON, COAP_PUT, 0 );
         coap_set_header_uri_path(&request, service_url);
 
-        /* TODO add payload */
+        char *msg = "aaaabbbbccccddddeeeeffffgggg";
+        coap_set_payload(&request, (uint8_t *) msg, REQUEST_SIZE);
 
         PRINT6ADDR(&group_ipaddr);
         PRINTF(" : %u\n", UIP_HTONS(REMOTE_PORT));

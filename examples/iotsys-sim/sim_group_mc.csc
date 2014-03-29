@@ -203,7 +203,7 @@
   <plugin>
     org.contikios.cooja.plugins.SimControl
     <width>292</width>
-    <z>2</z>
+    <z>1</z>
     <height>190</height>
     <location_x>0</location_x>
     <location_y>0</location_y>
@@ -218,7 +218,7 @@
       <skin>org.contikios.cooja.plugins.skins.LEDVisualizerSkin</skin>
       <skin>org.contikios.cooja.plugins.skins.AddressVisualizerSkin</skin>
       <skin>org.contikios.cooja.plugins.skins.TrafficVisualizerSkin</skin>
-      <viewport>3.9238171225255862 0.0 0.0 3.9238171225255862 -49.829673908302745 -20.33933524776108</viewport>
+      <viewport>3.923817122525586 0.0 0.0 3.923817122525586 -59.16300724163607 -31.006001914427735</viewport>
     </plugin_config>
     <width>613</width>
     <z>0</z>
@@ -234,7 +234,7 @@
       <coloring />
     </plugin_config>
     <width>816</width>
-    <z>1</z>
+    <z>2</z>
     <height>341</height>
     <location_x>659</location_x>
     <location_y>15</location_y>

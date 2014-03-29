@@ -34,7 +34,7 @@
 
 #define SICSLOWPAN_CONF_FRAG	1
 
-#define STATIC_ROUTING  0
+#define REQUEST_SIZE            16
 
 /* Disabling RDC for demo purposes. Core updates often require more memory. */
 /* For projects, optimize memory and enable RDC again. */

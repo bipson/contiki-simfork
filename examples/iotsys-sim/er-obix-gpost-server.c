@@ -174,7 +174,16 @@ put_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_s
 #if GROUP_COMM
 void group_handler(char *payload)
 {
-  printf("OK, received message\n");
+  char *msg = "aaaabbbbccccddddeeeeffffgggghhhh";
+
+  if (strncmp(payload, msg, REQUEST_SIZE) == 0)
+  {
+    printf("OK, received message\n");
+  }
+  else
+  {
+    printf("ERROR, payload does not match!\n");
+  }
 }
 
 static void 
