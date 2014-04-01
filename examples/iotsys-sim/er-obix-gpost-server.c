@@ -155,9 +155,11 @@ RESOURCE(put, (METHOD_GET | METHOD_PUT), "h", "title=\"Hello: ?len=0..\";rt=\"Te
 void
 put_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset)
 {
-  /* do nothing? */
-  printf("OK, received message\n");
+  const uint8_t *payload;
 
+  coap_get_payload(request, &payload);
+
+  group_handler(payload);
 #if 0
   PRINTF("\nMeter handler called\n");
   PRINTF("Preffered Size: %u\n", preferred_size);

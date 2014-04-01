@@ -104,7 +104,7 @@ char* service_url = "h";
 static int exp_response;
 
 /* This function is will be passed to COAP_BLOCKING_REQUEST() to handle responses. */
-void
+  void
 client_chunk_handler(void *response)
 {
   uint32_t num;
@@ -138,7 +138,7 @@ PROCESS_THREAD(coap_client_example, ev, data)
   static int count = 0;
 #endif /* CONTINUOUS */
   static int active = 0;
-	static int idle = 0;
+  static int idle = 0;
   exp_response = 0;
 
   SERVER_NODE(&server_ipaddr, 2);
@@ -165,53 +165,53 @@ PROCESS_THREAD(coap_client_example, ev, data)
       {
         PRINTF("--Toggle timer--\n");
         if (exp_response == 1)
-				{
+        {
           process_exit(&request_proc);
           printf("ERROR\n");
-					exp_response = 0;
-				}
+          exp_response = 0;
+        }
 #if CONTINUOUS == 0
-				if (count >= 10)
-				{
+        if (count >= 10)
+        {
           process_exit(&request_proc);
-					active = 0;
-					goto done;
-				}
+          active = 0;
+          goto done;
+        }
 #endif /* CONTINUOUS */
-				
-				/* only send next request if idling over */
-				if (idle == 0)
-				{
+
+        /* only send next request if idling over */
+        if (idle == 0)
+        {
 #if WAIT_AFTER_SEND == 1
-					idle = 1;
+          idle = 1;
 #endif /* WAIT_AFTER_SEND */
-					/* prepare request, TID is set by COAP_BLOCKING_REQUEST() */
-					coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0 );
-					coap_set_header_uri_path(request, service_url);
+          /* prepare request, TID is set by COAP_BLOCKING_REQUEST() */
+          coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0 );
+          coap_set_header_uri_path(request, service_url);
 
-					PRINT6ADDR(&server_ipaddr);
-					PRINTF(" : %u\n", UIP_HTONS(REMOTE_PORT));
+          PRINT6ADDR(&server_ipaddr);
+          PRINTF(" : %u\n", UIP_HTONS(REMOTE_PORT));
 
-					exp_response = 1;
-					PRINTF("Sending request\n");
-					process_start(&request_proc, NULL);
+          exp_response = 1;
+          PRINTF("Sending request\n");
+          process_start(&request_proc, NULL);
 
 #if CONTINUOUS == 0
-					count++;
-					if (count >= 10)
-					{
-						printf("LAST!\n");
-					}
+          count++;
+          if (count >= 10)
+          {
+            printf("LAST!\n");
+          }
 #endif /* CONTINUOUS */
 
-					PRINTF("--Done--\n");
-				}
-				else
-				{
-					/* toogle waiting */
-					PRINTF("toggling idle\n");
-					idle = 0;
-				}
+          PRINTF("--Done--\n");
+        }
+        else
+        {
+          /* toogle waiting */
+          PRINTF("toggling idle\n");
+          idle = 0;
+        }
 
       }
 done:

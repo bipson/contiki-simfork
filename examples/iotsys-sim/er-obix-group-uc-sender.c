@@ -47,12 +47,17 @@
 
 #include "dev/button-sensor.h"
 
+#if !UIP_CONF_IPV6_RPL && !defined (CONTIKI_TARGET_MINIMAL_NET) && !defined (CONTIKI_TARGET_NATIVE)
+#warning "Compiling with static routing!"
+#include "static-routing.h"
+#endif
+
+#include "dev/button-sensor.h"
+
 #if WITH_POWERTRACE
 #warning "Compiling with powertrace!"
 #include "powertrace.h"
 #endif
-
-#include "dev/button-sensor.h"
 
 #if WITH_COAP == 3
 #include "er-coap-03-engine.h"
@@ -67,7 +72,7 @@
 #endif
 
 
-#define DEBUG 1
+#define DEBUG 0
 #if DEBUG
 #define PRINTF(...) printf(__VA_ARGS__)
 #define PRINT6ADDR(addr) PRINTF("[%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x]", ((uint8_t *)addr)[0], ((uint8_t *)addr)[1], ((uint8_t *)addr)[2], ((uint8_t *)addr)[3], ((uint8_t *)addr)[4], ((uint8_t *)addr)[5], ((uint8_t *)addr)[6], ((uint8_t *)addr)[7], ((uint8_t *)addr)[8], ((uint8_t *)addr)[9], ((uint8_t *)addr)[10], ((uint8_t *)addr)[11], ((uint8_t *)addr)[12], ((uint8_t *)addr)[13], ((uint8_t *)addr)[14], ((uint8_t *)addr)[15])
@@ -81,7 +86,6 @@
 /* TODO: This server address is hard-coded for Cooja. */
 //#define SERVER_NODE(ipaddr)   uip_ip6addr(ipaddr, 0xaaaa, 0, 0, 0, 0x202, 0x2, 0x2, 0x2) /* cooja2 */
 #define SERVER_NODE(ipaddr, id)   uip_ip6addr(ipaddr, 0xaaaa, 0, 0, 0, 0xc30c, 0x0, 0x0, id) /* cooja2 */
-#define GROUP_ADDR(ipaddr)   uip_ip6addr(ipaddr, 0xff15, 0, 0, 0, 0, 0, 0, 0x1) /* cooja2 */
 
 #define LOCAL_PORT      UIP_HTONS(COAP_DEFAULT_PORT+1)
 #define REMOTE_PORT     UIP_HTONS(COAP_DEFAULT_PORT)
@@ -90,40 +94,47 @@
 /* continuous requests or limited to 10 requests */
 #define CONTINUOUS 1
 
-PROCESS(coap_client_example, "COAP Client Example");
+PROCESS(coap_client_example, "Loop");
 AUTOSTART_PROCESSES(&coap_client_example);
 
-uip_ipaddr_t group_ipaddr;
-uip_ds6_maddr_t *maddr;
+static uip_ipaddr_t server_ipaddr;
+static coap_packet_t request[1];
 static struct etimer et;
 
 /* leading and ending slashes only for demo purposes, get cropped automatically when setting the Uri-Path */
 char* service_url = "h";
 
+/* This function is will be passed to COAP_BLOCKING_REQUEST() to handle responses. */
+void
+client_chunk_handler(void *response)
+{
+#if 0
+  uint32_t num;
+  uint8_t more;
+  uint16_t size;
+  uint32_t offset;
+
+  /* just register if this was the last package */
+  coap_get_header_block2(response, &num, &more, &size, &offset);
+  if (!more)
+  {
+    printf("OK\n");
+  } 
+#endif /* 0 */
+}
+
 PROCESS_THREAD(coap_client_example, ev, data)
 {
   PROCESS_BEGIN();
-  static coap_packet_t request;
 
 #if CONTINUOUS == 0
   static int count = 0;
 #endif /* CONTINUOUS */
   static int active = 0;
-
-  GROUP_ADDR(&group_ipaddr);
-  maddr = uip_ds6_maddr_add(&group_ipaddr);
-  if(maddr == NULL)
-  {
-    PRINTF("NULL returned.");
-  }
-  else
-  {
-    PRINTF("Is used: %d", maddr->isused);
-    PRINT6ADDR(&(maddr->ipaddr));
-  }
+  static int i = 0;
 
   /* receives all CoAP messages */
-  // coap_receiver_init();
+  coap_receiver_init();
 
   SENSORS_ACTIVATE(button_sensor);
 
@@ -146,18 +157,23 @@ PROCESS_THREAD(coap_client_example, ev, data)
       {
         PRINTF("--Toggle timer--\n");
 
-        /* prepare request, TID is set by COAP_BLOCKING_REQUEST() */
-        coap_init_message(&request, COAP_TYPE_NON, COAP_PUT, 0 );
-        coap_set_header_uri_path(&request, service_url);
+        for(i = 0; i < 4; i++)
+        {
+          /* prepare request, TID is set by COAP_BLOCKING_REQUEST() */
+          coap_init_message(request, COAP_TYPE_CON, COAP_PUT, 0);
+          coap_set_header_uri_path(request, service_url);
 
-        char *msg = "aaaabbbbccccddddeeeeffffgggg";
-        coap_set_payload(&request, (uint8_t *) msg, REQUEST_SIZE);
+          char *msg = "aaaabbbbccccdddd";
+          coap_set_payload(request, (uint8_t *) msg, REQUEST_SIZE);
 
-        PRINT6ADDR(&group_ipaddr);
-        PRINTF(" : %u\n", UIP_HTONS(REMOTE_PORT));
+          SERVER_NODE(&server_ipaddr, i+2);
+          PRINT6ADDR(&server_ipaddr);
+          PRINTF(" : %u\n", UIP_HTONS(REMOTE_PORT));
 
-        PRINTF("Sending request\n");
-        coap_simple_request(&group_ipaddr, COAP_DEFAULT_PORT, &request);
+          PRINTF("Sending request\n");
+          //coap_simple_request(&server_ipaddr[i], COAP_DEFAULT_PORT, &request[i]);
+          COAP_BLOCKING_REQUEST(&server_ipaddr, REMOTE_PORT, request, client_chunk_handler);
+        }
 
 #if CONTINUOUS == 0
         count++;

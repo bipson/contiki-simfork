@@ -34,7 +34,7 @@
 
 #define SICSLOWPAN_CONF_FRAG	1
 
-#define REQUEST_SIZE            16
+#define REQUEST_SIZE            4
 
 /* Disabling RDC for demo purposes. Core updates often require more memory. */
 /* For projects, optimize memory and enable RDC again. */
