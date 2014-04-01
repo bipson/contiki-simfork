@@ -88,7 +88,7 @@
 
 #define TOGGLE_INTERVAL 10
 /* continuous requests or limited to 10 requests */
-#define CONTINUOUS 0
+#define CONTINUOUS 1
 
 PROCESS(coap_client_example, "COAP Client Example");
 AUTOSTART_PROCESSES(&coap_client_example);

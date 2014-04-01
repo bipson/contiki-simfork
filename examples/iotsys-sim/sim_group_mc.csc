@@ -9,7 +9,7 @@
   <simulation>
     <title>REST with RPL router</title>
     <speedlimit>1.0</speedlimit>
-    <randomseed>123456</randomseed>
+    <randomseed>123460</randomseed>
     <motedelay_us>1000000</motedelay_us>
     <radiomedium>
       org.contikios.cooja.radiomediums.UDGM
@@ -203,7 +203,7 @@
   <plugin>
     org.contikios.cooja.plugins.SimControl
     <width>292</width>
-    <z>1</z>
+    <z>2</z>
     <height>190</height>
     <location_x>0</location_x>
     <location_y>0</location_y>
@@ -221,7 +221,7 @@
       <viewport>3.923817122525586 0.0 0.0 3.923817122525586 -59.16300724163607 -31.006001914427735</viewport>
     </plugin_config>
     <width>613</width>
-    <z>0</z>
+    <z>3</z>
     <height>488</height>
     <location_x>12</location_x>
     <location_y>211</location_y>
@@ -230,11 +230,10 @@
     org.contikios.cooja.plugins.LogListener
     <plugin_config>
       <filter />
-      <formatted_time />
       <coloring />
     </plugin_config>
     <width>816</width>
-    <z>2</z>
+    <z>1</z>
     <height>341</height>
     <location_x>659</location_x>
     <location_y>15</location_y>
@@ -249,7 +248,7 @@
       <analyzers name="6lowpan" />
     </plugin_config>
     <width>770</width>
-    <z>3</z>
+    <z>0</z>
     <height>466</height>
     <location_x>640</location_x>
     <location_y>278</location_y>
