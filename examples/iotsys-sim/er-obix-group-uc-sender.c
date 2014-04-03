@@ -45,6 +45,8 @@
 #include "contiki.h"
 #include "contiki-net.h"
 
+#include "node-id.h"
+
 #include "dev/button-sensor.h"
 
 #if !UIP_CONF_IPV6_RPL && !defined (CONTIKI_TARGET_MINIMAL_NET) && !defined (CONTIKI_TARGET_NATIVE)
@@ -166,7 +168,7 @@ PROCESS_THREAD(coap_client_example, ev, data)
           char *msg = "aaaabbbbccccdddd";
           coap_set_payload(request, (uint8_t *) msg, REQUEST_SIZE);
 
-          SERVER_NODE(&server_ipaddr, i+2);
+          SERVER_NODE(&server_ipaddr, i+2+(node_id - 6));
           PRINT6ADDR(&server_ipaddr);
           PRINTF(" : %u\n", UIP_HTONS(REMOTE_PORT));
 
