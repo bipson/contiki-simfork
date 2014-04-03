@@ -1,0 +1,15 @@
+Priority 0:
+* Simulations
+* Get "values" from Cooja
+** Find out which values we can collect
+* CoAP Observe: Implement chunked messages
+
+Priority 1:
+* Integrate Contiki/CoAP into OMNET++
+
+Priority 2:
+* Contiki: static routes?
+
+Won't Fix:
+* CoAP Observe: Content Type of Requester not fixed (shortcoming of erbium)
+  Fix: For Evaluations, just change content type programmatically depending on scenario
