@@ -8,7 +8,7 @@
   <project EXPORT="discard">[APPS_DIR]/powertracker</project>
   <simulation>
     <title>REST with RPL router</title>
-    <randomseed>123456</randomseed>
+    <randomseed>123460</randomseed>
     <motedelay_us>1000000</motedelay_us>
     <radiomedium>
       org.contikios.cooja.radiomediums.UDGM
@@ -118,8 +118,8 @@
       <breakpoints />
       <interface_config>
         org.contikios.cooja.interfaces.Position
-        <x>112.84897033171495</x>
-        <y>46.18176613478227</y>
+        <x>130.16985812228765</x>
+        <y>7.021498086530948</y>
         <z>0.0</z>
       </interface_config>
       <interface_config>
@@ -146,8 +146,8 @@
       <breakpoints />
       <interface_config>
         org.contikios.cooja.interfaces.Position
-        <x>84.98493345122843</x>
-        <y>-37.41034450667729</y>
+        <x>124.52174253840526</x>
+        <y>-14.441341132222183</y>
         <z>0.0</z>
       </interface_config>
       <interface_config>
@@ -160,8 +160,8 @@
       <breakpoints />
       <interface_config>
         org.contikios.cooja.interfaces.Position
-        <x>40.55309085802019</x>
-        <y>-6.533979314786819</y>
+        <x>120.00325007129933</x>
+        <y>-22.348702949657547</y>
         <z>0.0</z>
       </interface_config>
       <interface_config>
@@ -202,7 +202,7 @@
   <plugin>
     org.contikios.cooja.plugins.SimControl
     <width>292</width>
-    <z>3</z>
+    <z>0</z>
     <height>190</height>
     <location_x>0</location_x>
     <location_y>0</location_y>
@@ -220,7 +220,7 @@
       <viewport>2.6557530165997942 0.0 0.0 2.6557530165997942 121.30100662136734 135.35263527564575</viewport>
     </plugin_config>
     <width>613</width>
-    <z>0</z>
+    <z>1</z>
     <height>488</height>
     <location_x>12</location_x>
     <location_y>211</location_y>
@@ -229,11 +229,10 @@
     org.contikios.cooja.plugins.LogListener
     <plugin_config>
       <filter />
-      <formatted_time />
       <coloring />
     </plugin_config>
     <width>816</width>
-    <z>2</z>
+    <z>3</z>
     <height>341</height>
     <location_x>669</location_x>
     <location_y>6</location_y>
@@ -248,7 +247,7 @@
       <analyzers name="6lowpan" />
     </plugin_config>
     <width>770</width>
-    <z>1</z>
+    <z>2</z>
     <height>466</height>
     <location_x>640</location_x>
     <location_y>278</location_y>

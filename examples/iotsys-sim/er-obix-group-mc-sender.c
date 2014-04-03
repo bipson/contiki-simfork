@@ -45,6 +45,8 @@
 #include "contiki.h"
 #include "contiki-net.h"
 
+#include "node-id.h"
+
 #include "dev/button-sensor.h"
 
 #if WITH_POWERTRACE
@@ -81,7 +83,7 @@
 /* TODO: This server address is hard-coded for Cooja. */
 //#define SERVER_NODE(ipaddr)   uip_ip6addr(ipaddr, 0xaaaa, 0, 0, 0, 0x202, 0x2, 0x2, 0x2) /* cooja2 */
 #define SERVER_NODE(ipaddr, id)   uip_ip6addr(ipaddr, 0xaaaa, 0, 0, 0, 0xc30c, 0x0, 0x0, id) /* cooja2 */
-#define GROUP_ADDR(ipaddr)   uip_ip6addr(ipaddr, 0xff15, 0, 0, 0, 0, 0, 0, 0x1) /* cooja2 */
+#define GROUP_ADDR(ipaddr)   uip_ip6addr(ipaddr, 0xff15, 0, 0, 0, 0, 0, 0, (node_id / 6)) /* cooja2 */
 
 #define LOCAL_PORT      UIP_HTONS(COAP_DEFAULT_PORT+1)
 #define REMOTE_PORT     UIP_HTONS(COAP_DEFAULT_PORT)

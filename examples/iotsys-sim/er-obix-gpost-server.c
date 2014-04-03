@@ -42,6 +42,7 @@
 #include <string.h>
 #include "contiki.h"
 #include "contiki-net.h"
+#include "node-id.h"
 
 #if WITH_POWERTRACE
 #warning "Compiling with powertrace!"
@@ -257,7 +258,7 @@ PROCESS_THREAD(rest_server_example, ev, data)
   uip_ipaddr_t groupAddress;
   int16_t groupIdentifier = 0;
 
-  uip_ip6addr(&groupAddress, 0xff15,0,0,0,0,0,0,0x1);
+  uip_ip6addr(&groupAddress, 0xff15,0,0,0,0,0,0,((node_id / 6)+1));
   uip_ds6_maddr_add(&groupAddress);
 
   extract_group_identifier(&groupAddress, &groupIdentifier);
