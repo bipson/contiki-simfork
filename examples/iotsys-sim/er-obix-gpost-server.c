@@ -174,7 +174,6 @@ put_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_s
   return;
 }
 
-#if GROUP_COMM
 void group_handler(char *payload)
 {
   char *msg = "aaaabbbbccccddddeeeeffffgggghhhh";
@@ -188,6 +187,7 @@ void group_handler(char *payload)
     printf("ERROR, payload does not match!\n");
   }
 }
+#if GROUP_COMM
 
 static void 
 group_comm_handler(const uip_ipaddr_t *sender_addr,

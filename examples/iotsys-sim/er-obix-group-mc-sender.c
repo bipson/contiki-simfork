@@ -54,8 +54,6 @@
 #include "powertrace.h"
 #endif
 
-#include "dev/button-sensor.h"
-
 #if WITH_COAP == 3
 #include "er-coap-03-engine.h"
 #elif WITH_COAP == 6
@@ -81,8 +79,6 @@
 #endif
 
 /* TODO: This server address is hard-coded for Cooja. */
-//#define SERVER_NODE(ipaddr)   uip_ip6addr(ipaddr, 0xaaaa, 0, 0, 0, 0x202, 0x2, 0x2, 0x2) /* cooja2 */
-#define SERVER_NODE(ipaddr, id)   uip_ip6addr(ipaddr, 0xaaaa, 0, 0, 0, 0xc30c, 0x0, 0x0, id) /* cooja2 */
 #define GROUP_ADDR(ipaddr)   uip_ip6addr(ipaddr, 0xff15, 0, 0, 0, 0, 0, 0, (node_id / 6)) /* cooja2 */
 
 #define LOCAL_PORT      UIP_HTONS(COAP_DEFAULT_PORT+1)
@@ -92,20 +88,17 @@
 /* continuous requests or limited to 10 requests */
 #define CONTINUOUS 1
 
-PROCESS(coap_client_example, "COAP Client Example");
+PROCESS(coap_client_example, "Loop");
 AUTOSTART_PROCESSES(&coap_client_example);
 
 uip_ipaddr_t group_ipaddr;
 uip_ds6_maddr_t *maddr;
 static struct etimer et;
 
-/* leading and ending slashes only for demo purposes, get cropped automatically when setting the Uri-Path */
-char* service_url = "h";
-
 PROCESS_THREAD(coap_client_example, ev, data)
 {
   PROCESS_BEGIN();
-  static coap_packet_t request;
+  coap_packet_t request[1];
 
 #if CONTINUOUS == 0
   static int count = 0;
@@ -149,17 +142,17 @@ PROCESS_THREAD(coap_client_example, ev, data)
         PRINTF("--Toggle timer--\n");
 
         /* prepare request, TID is set by COAP_BLOCKING_REQUEST() */
-        coap_init_message(&request, COAP_TYPE_NON, COAP_PUT, 0 );
-        coap_set_header_uri_path(&request, service_url);
+        coap_init_message(request, COAP_TYPE_NON, COAP_PUT, 0 );
+        coap_set_header_uri_path(request, "");
 
-        char *msg = "aaaabbbbccccddddeeeeffffgggg";
-        coap_set_payload(&request, (uint8_t *) msg, REQUEST_SIZE);
+        char *msg = "aaaabbbbccccdddd";
+        coap_set_payload(request, (uint8_t *) msg, REQUEST_SIZE);
 
         PRINT6ADDR(&group_ipaddr);
         PRINTF(" : %u\n", UIP_HTONS(REMOTE_PORT));
 
         PRINTF("Sending request\n");
-        coap_simple_request(&group_ipaddr, COAP_DEFAULT_PORT, &request);
+        coap_simple_request(&group_ipaddr, COAP_DEFAULT_PORT, request);
 
 #if CONTINUOUS == 0
         count++;

@@ -49,13 +49,6 @@
 
 #include "dev/button-sensor.h"
 
-#if !UIP_CONF_IPV6_RPL && !defined (CONTIKI_TARGET_MINIMAL_NET) && !defined (CONTIKI_TARGET_NATIVE)
-#warning "Compiling with static routing!"
-#include "static-routing.h"
-#endif
-
-#include "dev/button-sensor.h"
-
 #if WITH_POWERTRACE
 #warning "Compiling with powertrace!"
 #include "powertrace.h"
@@ -100,7 +93,6 @@ PROCESS(coap_client_example, "Loop");
 AUTOSTART_PROCESSES(&coap_client_example);
 
 static uip_ipaddr_t server_ipaddr;
-static coap_packet_t request[1];
 static struct etimer et;
 
 /* leading and ending slashes only for demo purposes, get cropped automatically when setting the Uri-Path */
@@ -128,6 +120,7 @@ client_chunk_handler(void *response)
 PROCESS_THREAD(coap_client_example, ev, data)
 {
   PROCESS_BEGIN();
+  coap_packet_t request[1];
 
 #if CONTINUOUS == 0
   static int count = 0;
