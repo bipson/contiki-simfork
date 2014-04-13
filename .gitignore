@@ -87,3 +87,7 @@ contiki-cc2530dk.lib
 
 #editor artifacts
 *.swp
+
+# rl78 build artifacts
+*.eval-adf7xxxmb4z
+*.eval-adf7xxxmb4z.srec
