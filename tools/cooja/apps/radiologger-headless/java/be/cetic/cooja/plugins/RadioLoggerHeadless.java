@@ -59,11 +59,11 @@ import org.contikios.cooja.plugins.analyzers.IPv6PacketAnalyzer;
 import org.contikios.cooja.util.StringUtils;
 
 /**
- * Radio Logger which exports a pcap file only.
+ * Radio Logger which writes log to file when closed.
  * It was designed to support radio logging in COOJA's headless mode.
- * Based on Fredrik Osterlind's RadioLogger.java
+ * Based on RadioLoggerHeadless.java by Laurent Deru and RadioLogger.java by Fredrik Osterlind
  *
- * @author Laurent Deru
+ * @author Philipp Raich
  */
 @ClassDescription("Headless radio logger")
 @PluginType(PluginType.SIM_PLUGIN)
@@ -74,21 +74,14 @@ public class RadioLoggerHeadless extends VisPlugin {
   private final Simulation simulation;
   private RadioMedium radioMedium;
   private Observer radioMediumObserver;
-  //private PcapExporter pcapExporter;
 
   ArrayList<PacketAnalyzer> analyzers = new ArrayList<PacketAnalyzer>();
   ArrayList<RadioConnectionLog> connections = new ArrayList<RadioConnectionLog>();
 
   public RadioLoggerHeadless(final Simulation simulationToControl, final Cooja gui) {
     super("Radio messages", gui, false);
-    logger.debug("Starting headless radio logger");
-    /*
-    try {
-        pcapExporter = new PcapExporter();
-    } catch (IOException e) {
-        e.printStackTrace();
-    }
-    */
+    logger.info("Starting headless radio logger");
+
     simulation = simulationToControl;
     radioMedium = simulation.getRadioMedium();
 
@@ -110,22 +103,6 @@ public class RadioLoggerHeadless extends VisPlugin {
         loggedConn.packet = conn.getSource().getLastPacketTransmitted();
 
         connections.add(loggedConn);
-        
-        /*
-        RadioConnection conn = radioMedium.getLastConnection();
-        if (conn == null) {
-          return;
-        }
-        RadioPacket radioPacket = conn.getSource().getLastPacketTransmitted();
-        //PacketAnalyser.Packet packet = new PacketAnalyser.Packet(radioPacket.getData(), PacketAnalyser.MAC_LEVEL);
-        try {
-            //pcapExporter.exportPacketData(packet.getPayload());
-            pcapExporter.exportPacketData(radioPacket.getPacketData());
-        } catch (IOException e) {
-            System.err.println("Could not export PCap data");
-            e.printStackTrace();
-        }
-        */
       }
     });
   }
