@@ -14,8 +14,14 @@
 # 'RadioLoggerHeadless' cooja app (not yet publicly available) based on:
 # https://github.com/cetic/contiki/tree/feature-cooja-headless-radiologger
 
-trap 'kill 0 && exit' SIGINT SIGTERM EXIT
+trap 'cleanup' SIGINT SIGTERM
 #trap "kill $pid1 && kill $pid2 " 2
+
+function cleanup {
+  # kill all background jobs:
+  kill $(jobs -pr) 
+  exit
+}
 
 if [ $# != 2 ] && [ $# != 3 ]; then
   "usage: `basename $0` <csc-file> <output-postfix> [<iterations>]" >&2
