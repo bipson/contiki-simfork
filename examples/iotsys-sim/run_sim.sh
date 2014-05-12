@@ -1,16 +1,43 @@
 #!/bin/bash
 
-trap 'kill $(jobs -p)' SIGINT SIGTERM
+##
+# run_sim.sh
+# Date: 2014-05-12
+# Author: Philipp Raich
+# Description: Repeat a given cooja simulation n times (default "5") and
+# write radio-log and testlog-output into:
+# './sim_logs/$(date + "%F")/{pdump|powertrace}_<output-postfix>_<iteration>.txt'
+#
+# This file war written for a certain purpose, please adjust it to your needs
+#
+# For RadioLogs in headless mode (written to 'COOJA.radiolog' you need a/the
+# 'RadioLoggerHeadless' cooja app (not yet publicly available) based on:
+# https://github.com/cetic/contiki/tree/feature-cooja-headless-radiologger
+
+trap 'kill 0 && exit' SIGINT SIGTERM EXIT
 #trap "kill $pid1 && kill $pid2 " 2
 
-router_success=0
-sim_name=$1
+if [ $# != 2 ] && [ $# != 3 ]; then
+  "usage: `basename $0` <csc-file> <output-postfix> [<iterations>]" >&2
+  exit 1
+fi
 
-for i in `seq 1 5`; do
-  echo "next round"
+router_success=0
+sim_file=$1
+output_name=$2
+if [ -z "$3" ]; then
+  iterations = 5
+else
+  iterations=$3
+fi
+
+for i in `seq 1 $iterations`; do
+  echo "=== Running Simulation run #$i"
+
+  # TODO write output of following commands to log?
 
   # start sim headless
-  java -mx512m -jar ../../tools/cooja/dist/cooja.jar -nogui="$sim_name.csc" -contiki='../..' &
+  java -mx512m -jar ../../tools/cooja/dist/cooja.jar -nogui="$sim_file" -contiki='../..' &
   pid1=$!
 
   # start border-router
@@ -30,7 +57,7 @@ for i in `seq 1 5`; do
   
   # move/rename output  
   separator='_'
-  filename=$sim_name$separator$i
+  output_postfix=$output_name$separator$i
   filedir="sim_logs"
   date_string=$(date +"%F")
 
@@ -39,7 +66,7 @@ for i in `seq 1 5`; do
     mkdir -p "$filedir"
   fi
 
-  mv "COOJA.radiolog" "$filedir/pdump_$filename.txt"
-  mv "COOJA.testlog" "$filedir/powertrace_$filename.txt"
+  mv "COOJA.radiolog" "$filedir/pdump_$output_postfix.txt"
+  mv "COOJA.testlog" "$filedir/powertrace_$output_postfix.txt"
   
 done
