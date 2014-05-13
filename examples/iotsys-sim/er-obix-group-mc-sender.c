@@ -145,7 +145,7 @@ PROCESS_THREAD(coap_client_example, ev, data)
         coap_init_message(request, COAP_TYPE_NON, COAP_PUT, 0 );
         coap_set_header_uri_path(request, "");
 
-        char *msg = "aaaabbbbccccdddd";
+        char *msg = "aaaabbbbccccddddeeeeffffgggghhhhaaaabbbbccccddddeeeeffffgggghhhh";
         coap_set_payload(request, (uint8_t *) msg, REQUEST_SIZE);
 
         PRINT6ADDR(&group_ipaddr);
