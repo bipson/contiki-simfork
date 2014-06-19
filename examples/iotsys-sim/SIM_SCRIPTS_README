@@ -35,9 +35,11 @@ PRELIMINARIES
 Latency tracer - WIP
 -------------
 Tracing latency is currently done via parsing the radio-log (I know this is not great).
-Multiple versions of the script exists, for different purposes.
+Multiple versions of the script exists, for different purposes, the newest one will usually be the most elaborate (fixes did
+not go back into the older versions).
 The respective script will try to find beginnings and end of a 'transaction' via regular expressions (and matching the sender of
 beginning and end).
 This process is not really elaborate, and might either: find false positives or false negatives, depeding on the pattern
 hardcoded at the beginning of the script. Typically, the patterns are written, so that false negatives are more likely, thus it
 might be necessary to adjust the patterns when the script shows an error.
+The tracers are currently written to output the data into a sqlite DB, you most certainly want to change this.
