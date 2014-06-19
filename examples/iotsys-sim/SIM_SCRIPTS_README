@@ -1,0 +1,43 @@
+This Readme describes how to run the simulation-scripts in this project
+
+The automated simulation is expected to run self-contained, i.e. it follows an automatable scenario and has a test-script
+that does everything necessary. The simualtions will run "headless", i.e. apart from the test-script, nobody will be able
+to interact with the motes directly.
+
+The written scripts just dump the mote output and the radiolog, so that the logs can be parsed afterwards (e.g. for
+power usage analysis or latency tracing).
+
+FILES
+-------------
+run_sim.sh: usage: ./run_sim.sh <csc-file> <output-postfix> [<iterations>]
+  This bash-script will run the given simulation (csc-file) for <iterations> times (default: 5)
+  'sudo make-connect-router-cooja.sh' will be called (repeatedly) as soon as the simulation has started. 
+  After every iteration, the script will copy testlog and radiolog (if present as 'COOJA.radiolog' and 'COOJA.testlog'
+  to 'sim_logs/<current_date>'.
+  The output-postfix will be used to name the outputfiles result will be: '{pdump|powertrace}_postfix_<iteration>.txt'
+  Note: Script might ask for password when started, as 'make-connect-router-cooja' requires sudo
+run_multicast_sims.sh:
+  This is an example script to show how to use 'run_sims.sh' to run a compete set of simulations
+  This script will (exemplarily) run the hardcoded simulation 2 times for each (hardcoded) payload setting
+sim_group_mc1_auto.csc: example simulation that 
+  
+
+PRELIMINARIES
+-------------
+-  The simulation itself should be able to run self-contained (i.e. all motes have buildable firmware, motes are set up, a cooja simulation script should handle the run of the simulation, etc.)
+-  For radio-logging, the headless-radio-logger plugin for cooja must be built and added to cooja, and your simulation
+    * Go to contiki/tools/cooja/apps/radiologger-headless and run 'ant jar'
+    * (Not sure if necessary:) run 'ant clean run' in contiki/tools/cooja
+    * Open cooja, navigate to 'Settings/Cooja extensions' and activate headless-radiologger
+    * Add Plugin to your simulation ('Tools/Headless Radio Logger') - leave the emtpy window open
+-  To make use of the above scripts, the Mote output should be 'logged' by the testscript
+
+Latency tracer - WIP
+-------------
+Tracing latency is currently done via parsing the radio-log (I know this is not great).
+Multiple versions of the script exists, for different purposes.
+The respective script will try to find beginnings and end of a 'transaction' via regular expressions (and matching the sender of
+beginning and end).
+This process is not really elaborate, and might either: find false positives or false negatives, depeding on the pattern
+hardcoded at the beginning of the script. Typically, the patterns are written, so that false negatives are more likely, thus it
+might be necessary to adjust the patterns when the script shows an error.
