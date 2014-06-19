@@ -28,6 +28,8 @@ if [ $# != 2 ] && [ $# != 3 ]; then
   exit 1
 fi
 
+sudo -v
+
 router_success=0
 sim_file=$1
 output_name=$2
