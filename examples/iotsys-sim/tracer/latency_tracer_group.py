@@ -1,5 +1,14 @@
 #!/bin/python
 
+""" Latency tracer for group communication (blossom type)
+
+This file is currently single purpose to write to a db (making it more generic
+would have cost more time than just changing it for other purposes).
+If it fails, most certainly the pattern 'coap_begin' is not well suited for your
+message, enable the debug output (uncomment print statements in parse()) for
+more detailed debugging.
+"""
+
 import os
 import csv
 import re
@@ -13,7 +22,31 @@ NR_OF_INTERVALS = 32
 
 coap_begin = "FF61\s?6161\s?61"
 
+
 def parse(filename, begin_pattern, requester, responders, other_responders, interval=INTERVAL) :
+	"""Parse the given radio log.
+	
+	Keyword arguments:
+	filename -- the name of the file to parse
+	begin_pattern -- the pattern that is used to identify the message (re)
+	requester -- the id of the node sending the request
+	responders -- ids of the nodes inside the blossom
+	other_responders -- ids of the receiving nodes _not_ inside the blossom
+	interval -- the interval used (between successive requests)
+
+	Parse for given pattern begin_pattern being sent by the requester to responders,
+	return duration between first request and last reception of request, as well as
+	missed requests (requests that were not received by all defined responders).
+	other_responders defines nodes outside of the blossom that still must be reached
+	by the request, else the miss_count will be increased by one (i'm not sure anymore
+	now why I added this constraint, most certainly it was used to determine if all
+	blossoms are fully working)
+	interval of the requests is used to distinguish subsequent requests from each other
+	(as they are typically resent multiple times)
+
+	In difference to the other latency tracers, there is no 'response', thus the
+	endpoint of a transaction is when the last responder received the message
+	"""
 
 	print("Now parsing: " +filename)
 
@@ -129,14 +162,17 @@ c = conn.cursor()
 
 filenames = []
 
+# search for all pdump-*,txt files in current folder, exclude _bak.txt files
 for file in os.listdir("./"):
     if file.startswith("pdump-") and file.endswith(".txt"):
     	if file.endswith("_bak.txt"):
     		continue
     	filenames.append(file)
 
+# parse every file seperately
 for filename in filenames:
 
+	# get simulation parameters from filename
 	regex = re.search('pdump-(\w*)-(\d*)b-rdc-hop(\d*)-(mcast|ucast)(\d?)_(\d?).txt', filename)
 
 	binding = regex.group(1)
@@ -148,6 +184,7 @@ for filename in filenames:
 
 	mcast = 1 if "mcast" in mcast else 0
 
+	# define requesters and responders/recipients for parsing, as well as some values valid for all simulations
 	responders = [2,3,4,5]
 	if topology == "4":
 		add_responders = [8,9,10,11,14,15,16,17]
@@ -158,10 +195,12 @@ for filename in filenames:
 	requests = "1"
 	rdc = "1"
 
+	# set the pattern that identifies the request
 	p_begin = re.compile(coap_begin)
 
 	intervals = []
 
+	# parse file, save durations and missed requests
 	intervals, missed = parse(filename, p_begin, requester, responders, add_responders)
 
 	if (missed > 0):
@@ -181,6 +220,7 @@ for filename in filenames:
 
 	print (filename + ":", len(intervals), np.mean(intervals))
 
+	# save values to db
 	for duration in intervals:
 		c.execute('INSERT INTO durations_group VALUES (?,?,?,?,?,?,?,?,?,?)', (binding, hop, payload, requests, rdc, mcast, topology, duration, iteration, comment))
 		# 	print (filename + ": " + str(duration) + ", " + str(binding) + ", " + str(hop) + ", " + str(payload) + ", " + str(iteration) + ", " + str(comment), topology)
