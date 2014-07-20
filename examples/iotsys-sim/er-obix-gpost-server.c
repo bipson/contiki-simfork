@@ -50,23 +50,10 @@
 #endif
 
 /* Define which resources to include to meet memory constraints. */
-#define REST_RES_METER 1
+#define REST_RES_METER 0
 #define GROUP_COMM 1
 
-#include "erbium.h"
-
-/* For CoAP-specific example: not required for normal RESTful Web service. */
-#if WITH_COAP == 3
-#include "er-coap-03.h"
-#elif WITH_COAP == 7
-#include "er-coap-07.h"
-#elif WITH_COAP == 12
-#include "er-coap-12.h"
-#elif WITH_COAP == 13
-#include "er-coap-13.h"
-#else
-#warning "Erbium example without CoAP-specifc functionality"
-#endif /* CoAP-specific example */
+#include "rest-engine.h"
 
 #define DEBUG 0
 #if DEBUG
@@ -147,10 +134,10 @@ join_group(int groupIdentifier, gc_handler handler  )
 
 #endif /* GROUP_COMM */
 
-
 /********************/
 /* Resources ********/
 /********************/
+#if REST_RES_METER
 RESOURCE(put, (METHOD_GET | METHOD_PUT), "h", "title=\"Hello: ?len=0..\";rt=\"Text\"");
 
 void
@@ -173,6 +160,7 @@ put_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_s
 #endif /* 0 */
   return;
 }
+#endif /* REST_RES_METER */
 
 void group_handler(char *payload)
 {
@@ -228,6 +216,7 @@ AUTOSTART_PROCESSES(&rest_server_example);
 PROCESS_THREAD(rest_server_example, ev, data)
 {
   PROCESS_BEGIN();
+  PROCESS_PAUSE();
   PRINTF("Starting Erbium Example Server\n");
 
 #ifdef RF_CHANNEL
@@ -248,7 +237,7 @@ PROCESS_THREAD(rest_server_example, ev, data)
   /* Activate the application-specific resources. */
 
 #if REST_RES_METER
-  rest_activate_resource(&resource_put);
+  rest_activate_resource(&resource_put, "h");
 #endif /* REST_RES_METER */
 
 #if GROUP_COMM

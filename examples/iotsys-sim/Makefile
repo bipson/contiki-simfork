@@ -1,5 +1,6 @@
-all: er-obix-server
-	# er-obix-requester er-obix-gpost-server er-obix-group-uc-sender er-obix-group-mc-sender hop
+all: er-obix-gpost-server
+	# er-obix-server
+	# er-obix-requester er-obix-group-uc-sender er-obix-group-mc-sender hop
 
 # Use this target explicitly if requried: er-plugtest-server
 
