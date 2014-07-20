@@ -49,23 +49,12 @@
 
 #include "dev/button-sensor.h"
 
+#include "er-coap-engine.h"
+
 #if WITH_POWERTRACE
 #warning "Compiling with powertrace!"
 #include "powertrace.h"
 #endif
-
-#if WITH_COAP == 3
-#include "er-coap-03-engine.h"
-#elif WITH_COAP == 6
-#include "er-coap-06-engine.h"
-#elif WITH_COAP == 7
-#include "er-coap-07-engine.h"
-#elif WITH_COAP == 13
-#include "er-coap-13-engine.h"
-#else
-#error "CoAP version defined by WITH_COAP not implemented"
-#endif
-
 
 #define DEBUG 1
 #if DEBUG

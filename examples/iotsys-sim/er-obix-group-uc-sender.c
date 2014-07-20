@@ -47,25 +47,14 @@
 
 #include "node-id.h"
 
+#include "er-coap-engine.h"
+
 #include "dev/button-sensor.h"
 
 #if WITH_POWERTRACE
 #warning "Compiling with powertrace!"
 #include "powertrace.h"
 #endif
-
-#if WITH_COAP == 3
-#include "er-coap-03-engine.h"
-#elif WITH_COAP == 6
-#include "er-coap-06-engine.h"
-#elif WITH_COAP == 7
-#include "er-coap-07-engine.h"
-#elif WITH_COAP == 13
-#include "er-coap-13-engine.h"
-#else
-#error "CoAP version defined by WITH_COAP not implemented"
-#endif
-
 
 #define DEBUG 0
 #if DEBUG
@@ -129,7 +118,7 @@ PROCESS_THREAD(coap_client_example, ev, data)
   static int i = 0;
 
   /* receives all CoAP messages */
-  coap_receiver_init();
+  coap_init_engine();
 
   SENSORS_ACTIVATE(button_sensor);
 
