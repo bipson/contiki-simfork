@@ -390,6 +390,7 @@ coap_serialize_message(void *packet, uint8_t *buffer)
   if((option - coap_pkt->buffer) <= COAP_MAX_HEADER_SIZE) {
     /* Payload marker */
     if(coap_pkt->payload_len) {
+      PRINTF("-Setting payload marker);");
       *option = 0xFF;
       ++option;
     }

@@ -59,6 +59,7 @@ PROCESS(coap_engine, "CoAP Engine");
 /*- Variables ---------------------------------------------------------------*/
 /*---------------------------------------------------------------------------*/
 static service_callback_t service_cbk = NULL;
+static group_comm_callback_t group_comm_cbk = NULL;
 
 /*---------------------------------------------------------------------------*/
 /*- Internal API ------------------------------------------------------------*/
@@ -85,6 +86,15 @@ coap_receive(void)
 
     erbium_status_code =
       coap_parse_message(message, uip_appdata, uip_datalen());
+
+    if( uip_is_addr_mcast(&UIP_IP_BUF->destipaddr) && ((uint8_t *)(&UIP_IP_BUF->destipaddr))[1] >> 4 ){ // multicast address with tran
+      if(group_comm_cbk != NULL){
+        group_comm_cbk(&UIP_IP_BUF->srcipaddr, &UIP_IP_BUF->destipaddr, message->payload, message->payload_len);
+      }
+      PRINTF("#### RETURNING.\n");
+        return NO_ERROR;
+      }
+
 
     if(erbium_status_code == NO_ERROR) {
 
@@ -303,6 +313,12 @@ coap_set_service_callback(service_callback_t callback)
 {
   service_cbk = callback;
 }
+/*----------------------------------------------------------------------------*/
+void
+coap_set_group_comm_callback(group_comm_callback_t callback)
+{
+  group_comm_cbk = callback;
+}
 /*---------------------------------------------------------------------------*/
 rest_resource_flags_t
 coap_get_rest_method(void *packet)
@@ -422,6 +438,15 @@ PT_THREAD(coap_blocking_request
 
   PT_END(&state->pt);
 }
+
+void coap_simple_request(uip_ipaddr_t *addr, uint16_t port, coap_packet_t *request){
+  uint8_t packet[COAP_MAX_PACKET_SIZE+1];
+  uint16_t packet_len;
+  packet_len = coap_serialize_message(request, &packet );
+  PRINTF("packet_len is %d.\n", packet_len);
+  coap_send_message(addr, uip_htons(port), &packet, packet_len);
+}
+
 /*---------------------------------------------------------------------------*/
 /*- REST Engine Interface ---------------------------------------------------*/
 /*---------------------------------------------------------------------------*/
@@ -430,6 +455,8 @@ const struct rest_implementation coap_rest_implementation = {
 
   coap_init_engine,
   coap_set_service_callback,
+
+  coap_set_group_comm_callback,
 
   coap_get_header_uri_path,
   coap_get_rest_method,

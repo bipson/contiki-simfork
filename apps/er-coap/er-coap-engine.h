@@ -82,4 +82,6 @@ PT_THREAD(coap_blocking_request
   }
 /*---------------------------------------------------------------------------*/
 
+void coap_simple_request(uip_ipaddr_t *addr, uint16_t port, coap_packet_t *request);
+
 #endif /* ER_COAP_ENGINE_H_ */

@@ -44,6 +44,7 @@
 #include "contiki.h"
 #include "contiki-lib.h"
 #include "rest-constants.h"
+#include "uip.h"
 
 /* list of valid REST Enigne implementations */
 #define REGISTERED_ENGINE_ERBIUM coap_rest_implementation
@@ -83,6 +84,11 @@ typedef void (*restful_trigger_handler)(void);
 typedef int (*service_callback_t)(void *request, void *response,
                                   uint8_t *buffer, uint16_t preferred_size,
                                   int32_t *offset);
+
+/* Group comm callback */
+typedef void (* group_comm_callback_t) (uip_ipaddr_t *sender_addr,
+                                        uip_ipaddr_t *receiver_addr,
+                                        uint8_t *data, uint16_t datalen);
 
 /* data structure representing a resource in REST */
 struct resource_s {
@@ -146,6 +152,7 @@ struct rest_implementation {
 
   /** Register the RESTful service callback at implementation. */
   void (*set_service_callback)(service_callback_t callback);
+  void (*set_group_comm_callback)(group_comm_callback_t callback);
 
   /** Get request URI path. */
   int (*get_url)(void *request, const char **url);
