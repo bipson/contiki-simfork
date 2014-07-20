@@ -39,8 +39,8 @@
 /* Disabling RDC for demo purposes. Core updates often require more memory. */
 /* For projects, optimize memory and enable RDC again. */
 #undef NETSTACK_CONF_RDC
-//#define NETSTACK_CONF_RDC     nullrdc_driver
-#define NETSTACK_CONF_RDC     contikimac_driver
+#define NETSTACK_CONF_RDC     nullrdc_driver
+//#define NETSTACK_CONF_RDC     contikimac_driver
 
 #undef NETSTACK_CONF_MAC
 #define NETSTACK_CONF_MAC     csma_driver

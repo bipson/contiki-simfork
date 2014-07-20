@@ -48,23 +48,7 @@
 #include "powertrace.h"
 #endif
 
-/* Define which resources to include to meet memory constraints. */
-#define REST_RES_METER 1
-
-#include "erbium.h"
-
-/* For CoAP-specific example: not required for normal RESTful Web service. */
-#if WITH_COAP == 3
-#include "er-coap-03.h"
-#elif WITH_COAP == 7
-#include "er-coap-07.h"
-#elif WITH_COAP == 12
-#include "er-coap-12.h"
-#elif WITH_COAP == 13
-#include "er-coap-13.h"
-#else
-#warning "Erbium example without CoAP-specifc functionality"
-#endif /* CoAP-specific example */
+#include "rest-engine.h"
 
 #define DEBUG 0
 #if DEBUG
@@ -78,8 +62,8 @@
 #endif
 
 #define CHUNKS_TOTAL    1024
-//#define CHUNKS_TOTAL    4096
-//#define CHUNKS_TOTAL    8
+
+extern resource_t res_meter;
 
 /********************/
 /* helper functions */
@@ -151,10 +135,11 @@ send_message(const char* message, const uint16_t size_msg, void *request, void *
 /********************/
 /* Resources ********/
 /********************/
-RESOURCE(meter, METHOD_GET, "h", "title=\"Hello meter: ?len=0..\";rt=\"Text\"");
+static void meter_get_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset);
+RESOURCE(res_meter, "title=\"Hello meter: ?len=0..\";rt=\"Text\"", meter_get_handler, NULL, NULL, NULL);
 
-void
-meter_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset)
+static void
+meter_get_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset)
 {
   PRINTF("\nMeter handler called\n");
   PRINTF("Preffered Size: %u\n", preferred_size);
@@ -173,6 +158,8 @@ AUTOSTART_PROCESSES(&rest_server_example);
 PROCESS_THREAD(rest_server_example, ev, data)
 {
   PROCESS_BEGIN();
+  PROCESS_PAUSE();
+
   PRINTF("Starting Erbium Example Server\n");
 
 #ifdef RF_CHANNEL
@@ -198,16 +185,12 @@ PROCESS_THREAD(rest_server_example, ev, data)
 
   /* Activate the application-specific resources. */
 
-#if REST_RES_METER
-
 #if 0
   /* clear msg_size array to prevent programmer errors */
   memset(&msg_size[0][0], -1, RESOURCES_SIZE * NR_ENCODINGS * sizeof(uint16_t));
 #endif
 
-  rest_activate_resource(&resource_meter);
-
-#endif /* REST_RES_METER */
+  rest_activate_resource(&res_meter, "h");
 
 #if WITH_POWERTRACE
   powertrace_start(CLOCK_SECOND * 10);
