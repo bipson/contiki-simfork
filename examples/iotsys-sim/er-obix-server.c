@@ -145,7 +145,7 @@ meter_get_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
   PRINTF("Preffered Size: %u\n", preferred_size);
 
   char const *const msg = "aaaabbbbccccddddeeeeffffgggghhhhaaaabbbbccccddddeeeeffffgggghhhhaaaabbbbccccddddeeeeffffgggghhhhaaaabbbbccccddddeeeeffffgggghhhh";
-  const uint8_t msg_size = 128;
+  const uint8_t msg_size = REQUEST_SIZE;
 
   send_message(msg, msg_size, request, response, buffer, preferred_size, offset);
 

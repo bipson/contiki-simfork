@@ -50,12 +50,12 @@
 #endif
 
 /* Define which resources to include to meet memory constraints. */
-#define REST_RES_METER 0
+#define REST_RES_METER 1
 #define GROUP_COMM 1
 
 #include "rest-engine.h"
 
-#define DEBUG 0
+#define DEBUG 1
 #if DEBUG
 #define PRINTF(...) printf(__VA_ARGS__)
 #define PRINT6ADDR(addr) PRINTF("[%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x]", ((uint8_t *)addr)[0], ((uint8_t *)addr)[1], ((uint8_t *)addr)[2], ((uint8_t *)addr)[3], ((uint8_t *)addr)[4], ((uint8_t *)addr)[5], ((uint8_t *)addr)[6], ((uint8_t *)addr)[7], ((uint8_t *)addr)[8], ((uint8_t *)addr)[9], ((uint8_t *)addr)[10], ((uint8_t *)addr)[11], ((uint8_t *)addr)[12], ((uint8_t *)addr)[13], ((uint8_t *)addr)[14], ((uint8_t *)addr)[15])
@@ -72,6 +72,10 @@
 // Group communication definition
 #define MAX_GC_HANDLERS 1
 #define MAX_GC_GROUPS 1
+
+#if REST_RES_METER
+resource_t res_meter;
+#endif /* REST_RES_METER */
 
 #if GROUP_COMM
 typedef void (*gc_handler) (char*);
@@ -138,11 +142,14 @@ join_group(int groupIdentifier, gc_handler handler  )
 /* Resources ********/
 /********************/
 #if REST_RES_METER
-RESOURCE(put, (METHOD_GET | METHOD_PUT), "h", "title=\"Hello: ?len=0..\";rt=\"Text\"");
+static void put_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset);
 
-void
+RESOURCE(res_meter, "title=\"Hello: ?len=0..\";rt=\"Text\"", NULL, NULL, put_handler, NULL);
+
+static void
 put_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset)
 {
+  printf("put_handler called\n");
   const uint8_t *payload;
 
   coap_get_payload(request, &payload);
@@ -237,7 +244,7 @@ PROCESS_THREAD(rest_server_example, ev, data)
   /* Activate the application-specific resources. */
 
 #if REST_RES_METER
-  rest_activate_resource(&resource_put, "h");
+  rest_activate_resource(&res_meter, "h");
 #endif /* REST_RES_METER */
 
 #if GROUP_COMM
