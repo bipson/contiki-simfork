@@ -17,9 +17,14 @@
     </layout>
   </appender>
 
+  <logger name="MSPSim">
+    <level value="error"/>
+  </logger>
+
   <root>
     <priority value="debug"/>
     <appender-ref ref="logfile"/>
     <appender-ref ref="stdout"/>
   </root>
+
 </log4j:configuration>
