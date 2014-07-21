@@ -149,7 +149,6 @@ RESOURCE(res_meter, "title=\"Hello: ?len=0..\";rt=\"Text\"", NULL, NULL, put_han
 static void
 put_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset)
 {
-  printf("put_handler called\n");
   const uint8_t *payload;
 
   coap_get_payload(request, &payload);

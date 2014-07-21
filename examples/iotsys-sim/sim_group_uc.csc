@@ -202,10 +202,10 @@
   <plugin>
     org.contikios.cooja.plugins.SimControl
     <width>292</width>
-    <z>3</z>
+    <z>0</z>
     <height>190</height>
-    <location_x>0</location_x>
-    <location_y>0</location_y>
+    <location_x>4</location_x>
+    <location_y>9</location_y>
   </plugin>
   <plugin>
     org.contikios.cooja.plugins.Visualizer
@@ -220,7 +220,7 @@
       <viewport>2.6557530165997942 0.0 0.0 2.6557530165997942 121.30100662136734 135.35263527564575</viewport>
     </plugin_config>
     <width>613</width>
-    <z>0</z>
+    <z>2</z>
     <height>488</height>
     <location_x>12</location_x>
     <location_y>211</location_y>
@@ -233,7 +233,7 @@
       <coloring />
     </plugin_config>
     <width>816</width>
-    <z>2</z>
+    <z>1</z>
     <height>341</height>
     <location_x>669</location_x>
     <location_y>6</location_y>
@@ -248,10 +248,10 @@
       <analyzers name="6lowpan" />
     </plugin_config>
     <width>770</width>
-    <z>1</z>
+    <z>3</z>
     <height>466</height>
-    <location_x>640</location_x>
-    <location_y>278</location_y>
+    <location_x>680</location_x>
+    <location_y>295</location_y>
   </plugin>
   <plugin>
     org.contikios.cooja.plugins.TimeLine
