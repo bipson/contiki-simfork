@@ -46,6 +46,5 @@
 #define UIP_MCAST6_ENGINE_NONE        0 /* Selecting this disables mcast */
 #define UIP_MCAST6_ENGINE_SMRF        1
 #define UIP_MCAST6_ENGINE_ROLL_TM     2
-#define UIP_MCAST6_ENGINE_FLOOD       3
 
 #endif /* UIP_MCAST6_ENGINES_H_ */
