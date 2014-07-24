@@ -79,6 +79,10 @@
 
 #include <string.h>
 
+#ifdef UIP_FALLBACK_INTERFACE
+extern struct uip_fallback_interface UIP_FALLBACK_INTERFACE;
+#endif
+
 #if UIP_CONF_IPV6
 /*---------------------------------------------------------------------------*/
 /* For Debug, logging, statistics                                            */
@@ -1197,6 +1201,32 @@ uip_process(uint8_t flag)
         UIP_STAT(++uip_stat.ip.drop);
         goto send;
       }
+
+#if IOTSYS_GC_FLOOD
+      // check for site local transient multicast address --> forward to FALLBACK INTERFACE to transmit
+      // to backhaul link
+#ifdef UIP_FALLBACK_INTERFACE
+      PRINT6ADDR(&UIP_IP_BUF->destipaddr);
+      if(uip_is_addr_mcast(&UIP_IP_BUF->destipaddr) &&
+         uip_is_addr_mcast_site_local(&UIP_IP_BUF->destipaddr) &&
+         uip_is_addr_mcast_transient(&UIP_IP_BUF->destipaddr)) {
+        UIP_FALLBACK_INTERFACE.output();
+
+        // TODO: check if packet came from wsn or from tunnel interface
+        //goto send;
+      }
+#endif /* !UIP_FALLBACK_INTERFACE */
+      if(!(uip_is_addr_mcast(&UIP_IP_BUF->destipaddr) &&
+           uip_is_addr_mcast_site_local(&UIP_IP_BUF->destipaddr) &&
+           uip_is_addr_mcast_transient(&UIP_IP_BUF->destipaddr))) {
+        PRINTF("Dropping packet, not for me and link local or multicast\n");
+        UIP_STAT(++uip_stat.ip.drop);
+        goto drop;
+      }
+#endif /* IOTSYS_GC_FLOOD */
+
+      //TODO: Is the following (up to #else /* UIP_CONF_ROUTER */ to exclude with IOTSYS_GC_FLOOD?
+
       /* Check Hop Limit */
       if(UIP_IP_BUF->ttl <= 1) {
         uip_icmp6_error_output(ICMP6_TIME_EXCEEDED,

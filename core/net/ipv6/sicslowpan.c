@@ -67,6 +67,10 @@
 #include "net/ipv6/sicslowpan.h"
 #include "net/netstack.h"
 
+#if IOTSYS_GC_FLOOD
+#include "sys/ctimer.h"
+#endif /* IOTSYS_GC_FLOOD */
+
 #if UIP_CONF_IPV6
 
 #include <stdio.h>
@@ -263,6 +267,88 @@ static int last_rssi;
 /* Rime Sniffer support for one single listener to enable powertrace of IP */
 /*-------------------------------------------------------------------------*/
 static struct rime_sniffer *callback = NULL;
+
+#if IOTSYS_GC_FLOOD
+/*-------------------------------------------------------------------------*/
+/* LOWPAN_BC0 structures                                                   */
+/*-------------------------------------------------------------------------*/
+
+// buffer of latest sequence nrs using LRU policy for replacement
+static struct ipv6_sequence sequenceBuffer[LOWPAN_BC0_SEQUENCE_BUF_LEN] = {{0}};
+
+// current index
+static int cur_ipv6_sequence = 0;
+
+void debug_ipv6_sequence_buffer(){
+  uip_ip6addr_t unspecified;
+  int i;
+  PRINTF("SEQUENCE BUFFER IS:\n");
+  uip_create_unspecified(&unspecified);
+  for(i = 0; i < LOWPAN_BC0_SEQUENCE_BUF_LEN; i++){
+    PRINTF("  ");
+    if(uip_ip6addr_cmp(&unspecified,&sequenceBuffer[i].srcip)){
+      PRINTF("Unspecified.\n");
+    }
+    else{
+      PRINT6ADDR(&sequenceBuffer[i].srcip);
+      PRINTF(": %d\n", sequenceBuffer[i].sequence);
+    }
+  }
+}
+
+// sequence number of this node
+static uint8_t lowpan_bc0_sequence = 0;
+
+int isSequenceNewAndStore(uip_ip6addr_t *srcip, uint8_t sequence){
+  uip_ip6addr_t unspecified;
+  int i;
+
+  // check if sequence number for source ip has been recorded
+  uip_create_unspecified(&unspecified);
+  for(i = 0; i < LOWPAN_BC0_SEQUENCE_BUF_LEN; i++){
+    PRINTF("  ");
+    if(uip_ip6addr_cmp(srcip,&sequenceBuffer[i].srcip)){
+      // found src ip
+      PRINTF("Source IP: ");
+      PRINT6ADDR(srcip);
+      PRINTF("\nFound sequence number for src ip %d, packet sequence is: %d\n ", sequenceBuffer[i].sequence, sequence);
+
+      // in general we want to keep the sequence number increasing but after 256 frames it is reset to 0
+      // therefore the second clause assumes that the current sequence number including the last 10
+      // numbers are old packets. if the sequence number is lower below this treshold it is assumed to
+      // be a new packet.
+      if(sequenceBuffer[i].sequence == sequence &&  !(sequence < sequenceBuffer[i].sequence - 10)){
+        // this is an old packet
+        return 0;
+      }
+      else{
+        // this is a new packet
+        sequenceBuffer[i].sequence = sequence;
+        return 1;
+      }
+    }
+  }
+
+  // if there was no sequence number found create new entry
+  if(cur_ipv6_sequence == LOWPAN_BC0_SEQUENCE_BUF_LEN){
+    // end of array reached reset index and overwrite existing entries
+    cur_ipv6_sequence = 0;
+  }
+  PRINTF("\nCreating new sequence number entry for IPv6 address.\n");
+  uip_ip6addr_copy(&sequenceBuffer[cur_ipv6_sequence].srcip , srcip);
+  sequenceBuffer[cur_ipv6_sequence].sequence = sequence;
+  cur_ipv6_sequence++;
+  // sequence was new
+  return 1;
+}
+
+static struct ctimer retransmit_timer;
+
+static void retransmit_callback(void *ptr){
+  PRINTF("Retransmit callback called.\n");
+  send_packet(&linkaddr_null);
+}
+#endif /* IOTSYS_GC_FLOOD */
 
 void
 rime_sniffer_add(struct rime_sniffer *s)
@@ -1297,6 +1383,40 @@ compress_hdr_ipv6(linkaddr_t *link_destaddr)
 }
 /** @} */
 
+#if IOTSYS_GC_FLOOD
+/*--------------------------------------------------------------------*/
+/** \name LOWPAN_BC0 header compression
+ * @{                                                                 */
+/*--------------------------------------------------------------------*/
+/* \brief LOWPAN_BC0 header for multicasting
+ *
+ * For flooding based multicasting a simple 8 bit sequence
+ * number is used to avoid re-transmission of an already seen
+ * multicast packet.
+ *
+ * \verbatim
+ * 0               1                   2                   3
+ * 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ * | LOWPAN_BC0    | SEQUENCE NR   |IPv6 header and payload ...
+ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ * \endverbatim
+ */
+static void
+compress_hdr_bc0(linkaddr_t *link_destaddr)
+{
+  *packetbuf_ptr = SICSLOWPAN_DISPATCH_BC0;
+  // remember my own broadcast sequence number
+  isSequenceNewAndStore(&UIP_IP_BUF->srcipaddr, lowpan_bc0_sequence);
+  *(packetbuf_ptr + 1) = lowpan_bc0_sequence++; // sequence number
+  packetbuf_hdr_len += SICSLOWPAN_BC0_HDR_LEN;
+  memcpy(packetbuf_ptr + packetbuf_hdr_len, UIP_IP_BUF, UIP_IPH_LEN);
+  packetbuf_hdr_len += UIP_IPH_LEN;
+  uncomp_hdr_len += UIP_IPH_LEN;
+  return;
+}
+#endif /* IOTSYS_GC_FLOOD */
+
 /*--------------------------------------------------------------------*/
 /** \name Input/output functions common to all compression schemes
  * @{                                                                 */
@@ -1414,6 +1534,38 @@ output(const uip_lladdr_t *localdest)
   PRINTFO("sicslowpan output: sending packet len %d\n", uip_len);
 
   if(uip_len >= COMPRESSION_THRESHOLD) {
+
+#if IOTSYS_GC_FLOOD
+    if(localdest == NULL && ((uint8_t *)(&UIP_IP_BUF->destipaddr))[1] >> 4 ){ // broadcast packet --> use LOWPAN_BC0
+      // check for transient ipv6 multicast address
+
+      PRINTF("sicslowpan: Using BC0 compression.\n");
+      PRINT6ADDR(&UIP_IP_BUF->destipaddr);
+      compress_hdr_bc0(&dest);
+    } else {
+      /* Try to compress the headers */
+#if SICSLOWPAN_COMPRESSION == SICSLOWPAN_COMPRESSION_HC1
+      compress_hdr_hc1(&dest);
+#endif /* SICSLOWPAN_COMPRESSION == SICSLOWPAN_COMPRESSION_HC1 */
+#if SICSLOWPAN_COMPRESSION == SICSLOWPAN_COMPRESSION_IPV6
+      compress_hdr_ipv6(&dest);
+#endif /* SICSLOWPAN_COMPRESSION == SICSLOWPAN_COMPRESSION_IPV6 */
+#if SICSLOWPAN_COMPRESSION == SICSLOWPAN_COMPRESSION_HC06
+      compress_hdr_hc06(&dest);
+#endif /* SICSLOWPAN_COMPRESSION == SICSLOWPAN_COMPRESSION_HC06 */
+    }
+  } else {
+    if(localdest == NULL && ((uint8_t *)(&UIP_IP_BUF->destipaddr))[1] >> 4 ){ // broadcast packet --> use LOWPAN_BC0 if transient ipv6
+      PRINTF("sicslowpan: Using BC0 compression.");
+      PRINT6ADDR(&UIP_IP_BUF->destipaddr);
+      compress_hdr_bc0(&dest);
+    } else {
+      compress_hdr_ipv6(&dest);
+    }
+  }
+
+#else /* IOTSYS_GC_FLOOD */
+
     /* Try to compress the headers */
 #if SICSLOWPAN_COMPRESSION == SICSLOWPAN_COMPRESSION_HC1
     compress_hdr_hc1(&dest);
@@ -1427,6 +1579,7 @@ output(const uip_lladdr_t *localdest)
   } else {
     compress_hdr_ipv6(&dest);
   }
+#endif /* IOTSYS_GC_FLOOD */
   PRINTFO("sicslowpan output: header of len %d\n", packetbuf_hdr_len);
 
   /* Calculate NETSTACK_FRAMER's header length, that will be added in the NETSTACK_RDC.
@@ -1444,7 +1597,14 @@ output(const uip_lladdr_t *localdest)
   framer_hdrlen = 21;
 #endif /* USE_FRAMER_HDRLEN */
 
+#if IOTSYS_GC_FLOOD
+  // if((int)uip_len - (int)uncomp_hdr_len > (int)MAC_MAX_PAYLOAD - framer_hdrlen - (int)rime_hdr_len) {
+  // framer_hdrlen --> should be already considered in MAC_MAX_PAYLOAD
+  if((int)uip_len - (int)uncomp_hdr_len > (int)MAC_MAX_PAYLOAD - (int)packetbuf_hdr_len) {
+#else /* IOTSYS_GC_FLOOD */
   if((int)uip_len - (int)uncomp_hdr_len > (int)MAC_MAX_PAYLOAD - framer_hdrlen - (int)packetbuf_hdr_len) {
+#endif /* IOTSYS_GC_FLOOD */
+        
 #if SICSLOWPAN_CONF_FRAG
     struct queuebuf *q;
     /*
@@ -1591,6 +1751,10 @@ input(void)
   uint16_t frag_tag = 0;
   uint8_t first_fragment = 0, last_fragment = 0;
 #endif /*SICSLOWPAN_CONF_FRAG*/
+
+#if IOTSYS_GC_FLOOD
+  uint16_t retransmission_wait_ms = 0;
+#endif /* IOTSYS_GC_FLOOD */
 
   /* init */
   uncomp_hdr_len = 0;
@@ -1743,6 +1907,33 @@ input(void)
       packetbuf_hdr_len += UIP_IPH_LEN;
       uncomp_hdr_len += UIP_IPH_LEN;
       break;
+#if IOTSYS_GC_FLOOD
+    case SICSLOWPAN_DISPATCH_BC0:
+      PRINTFI("sicslowpan input: BC0\n");
+      packetbuf_hdr_len += SICSLOWPAN_BC0_HDR_LEN;
+
+      /* Put uncompressed IP header in sicslowpan_buf. */
+      memcpy(SICSLOWPAN_IP_BUF, packetbuf_ptr + packetbuf_hdr_len, UIP_IPH_LEN);
+
+      // re-transmit packet
+      PRINTF("Check sequence number\n");
+
+      if(isSequenceNewAndStore(&SICSLOWPAN_IP_BUF->srcipaddr, (uint8_t) *(packetbuf_ptr +1))){
+        //debug_ipv6_sequence_buffer();
+        retransmission_wait_ms = abs(random_rand() % 10); // max 100 ms
+        //send_packet(&rimeaddr_null);
+        ctimer_set(&retransmit_timer, (CLOCK_SECOND / 100) * retransmission_wait_ms, retransmit_callback, NULL);
+      }
+      else{
+        PRINTF("Sequence is old. Returning.\n");
+        return;
+      }
+
+      /* Update uncomp_hdr_len and packetbuf_hdr_len. */
+      packetbuf_hdr_len += UIP_IPH_LEN;
+      uncomp_hdr_len += UIP_IPH_LEN;
+      break;
+#endif /* IOTSYS_GC_FLOOD */
     default:
       /* unknown header */
       PRINTFI("sicslowpan input: unknown dispatch: %u\n",

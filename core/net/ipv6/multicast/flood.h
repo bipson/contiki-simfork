@@ -31,21 +31,45 @@
 
 /**
  * \file
- *         Header file with definition of multicast engine constants
- *
- *         When writing a new engine, add it here with a unique number and
- *         then modify uip-mcast6.h accordingly
+ *         Header file for 'Stateless Multicast RPL Forwarding' (SMRF)
  *
  * \author
  *         George Oikonomou - <oikonomou@users.sourceforge.net>
  */
 
-#ifndef UIP_MCAST6_ENGINES_H_
-#define UIP_MCAST6_ENGINES_H_
+#ifndef SMRF_H_
+#define SMRF_H_
 
-#define UIP_MCAST6_ENGINE_NONE        0 /* Selecting this disables mcast */
-#define UIP_MCAST6_ENGINE_SMRF        1
-#define UIP_MCAST6_ENGINE_ROLL_TM     2
-#define UIP_MCAST6_ENGINE_FLOOD       3
+#include "contiki-conf.h"
 
-#endif /* UIP_MCAST6_ENGINES_H_ */
+#include <stdint.h>
+/*---------------------------------------------------------------------------*/
+/* Configuration */
+/*---------------------------------------------------------------------------*/
+/* Fmin */
+#ifdef SMRF_CONF_MIN_FWD_DELAY
+#define SMRF_MIN_FWD_DELAY SMRF_CONF_MIN_FWD_DELAY
+#else
+#define SMRF_MIN_FWD_DELAY 4
+#endif
+
+/* Max Spread */
+#ifdef SMRF_CONF_MAX_SPREAD
+#define SMRF_MAX_SPREAD SMRF_CONF_MAX_SPREAD
+#else
+#define SMRF_MAX_SPREAD 4
+#endif
+/*---------------------------------------------------------------------------*/
+/* Stats datatype */
+/*---------------------------------------------------------------------------*/
+struct smrf_stats {
+  uint16_t mcast_in_unique;
+  uint16_t mcast_in_all;        /* At layer 3 */
+  uint16_t mcast_in_ours;       /* Unique and we are a group member */
+  uint16_t mcast_fwd;           /* Forwarded by us but we are not the seed */
+  uint16_t mcast_out;           /* We are the seed */
+  uint16_t mcast_bad;
+  uint16_t mcast_dropped;
+};
+
+#endif /* SMRF_H_ */

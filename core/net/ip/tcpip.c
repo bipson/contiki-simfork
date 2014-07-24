@@ -724,6 +724,16 @@ tcpip_ipv6_output(void)
     }
     return;
   }
+  
+#if IOTSYS_GC_FLOOD
+  PRINTF("########### Now multicast\n");
+  // now check for transient site local mcast address.
+  // these addresses should be forwarded on the rpl-border-router
+  if(uip_is_addr_mcast_site_local(&UIP_IP_BUF->destipaddr) && uip_is_addr_mcast_transient(&UIP_IP_BUF->destipaddr)) {
+    PRINTF("##### SITE LOCAL TRANSIENT MCAST ADDRESS!\n");
+  }
+#endif /* IOTSYS_GC_FLOOD */
+
   /* Multicast IP destination address. */
   tcpip_output(NULL);
   uip_len = 0;
