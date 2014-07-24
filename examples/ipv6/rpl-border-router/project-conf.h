@@ -28,6 +28,10 @@
  *
  */
 
+/* enable iotsys mc-is-bc mechanism */
+#define IOTSYS_GC_FLOOD         1
+
+
 #ifndef PROJECT_ROUTER_CONF_H_
 #define PROJECT_ROUTER_CONF_H_
 

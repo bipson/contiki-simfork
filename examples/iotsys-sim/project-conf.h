@@ -36,6 +36,9 @@
 
 #define REQUEST_SIZE            16
 
+/* enable iotsys mc-is-bc mechanism */
+#define IOTSYS_GC_FLOOD         1
+
 /* Disabling RDC for demo purposes. Core updates often require more memory. */
 /* For projects, optimize memory and enable RDC again. */
 #undef NETSTACK_CONF_RDC
