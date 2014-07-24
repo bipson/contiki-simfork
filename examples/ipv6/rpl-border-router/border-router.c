@@ -54,6 +54,10 @@
 #define DEBUG DEBUG_NONE
 #include "net/ip/uip-debug.h"
 
+#if IOTSYS_GC_FLOOD
+uint16_t dag_id[] = {0x1111, 0x1100, 0, 0, 0, 0, 0, 0x0011};
+#endif
+
 static uip_ipaddr_t prefix;
 static uint8_t prefix_set;
 
@@ -318,7 +322,9 @@ request_prefix(void)
 void
 set_prefix_64(uip_ipaddr_t *prefix_64)
 {
+#if IOTSYS_GC_FLOOD == 0
   rpl_dag_t *dag;
+#endif
   uip_ipaddr_t ipaddr;
   memcpy(&prefix, prefix_64, 16);
   memcpy(&ipaddr, prefix_64, 16);
@@ -326,15 +332,20 @@ set_prefix_64(uip_ipaddr_t *prefix_64)
   uip_ds6_set_addr_iid(&ipaddr, &uip_lladdr);
   uip_ds6_addr_add(&ipaddr, 0, ADDR_AUTOCONF);
 
+#if IOTSYS_GC_FLOOD == 0
   dag = rpl_set_root(RPL_DEFAULT_INSTANCE, &ipaddr);
   if(dag != NULL) {
     rpl_set_prefix(dag, &prefix, 64);
     PRINTF("created a new RPL dag\n");
   }
+#endif
 }
 /*---------------------------------------------------------------------------*/
 PROCESS_THREAD(border_router_process, ev, data)
 {
+#if IOTSYS_GC_FLOOD
+  rpl_dag_t *dag;
+#endif
   static struct etimer et;
 
   PROCESS_BEGIN();
@@ -365,6 +376,12 @@ PROCESS_THREAD(border_router_process, ev, data)
     etimer_set(&et, CLOCK_SECOND);
     request_prefix();
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&et));
+  }
+
+  dag = rpl_set_root(RPL_DEFAULT_INSTANCE,(uip_ip6addr_t *)dag_id);
+  if(dag != NULL) {
+    rpl_set_prefix(dag, &prefix, 64);
+    PRINTF("created a new RPL dag\n");
   }
 
   /* Now turn the radio on, but disable radio duty cycling.
