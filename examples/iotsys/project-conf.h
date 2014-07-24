@@ -32,6 +32,9 @@
 #ifndef PROJECT_ERBIUM_CONF_H_
 #define PROJECT_ERBIUM_CONF_H_
 
+/* use BC0-flooding for multicast */
+#define IOTSYS_GC_FLOOD       1
+
 /* Some platforms have weird includes. */
 #undef IEEE802154_CONF_PANID
 

@@ -34,11 +34,11 @@
 #include "lib/random.h"
 #include "sys/ctimer.h"
 #include "sys/etimer.h"
-#include "net/uip.h"
-#include "net/uip-ds6.h"
+#include "net/ip/uip.h"
+#include "net/ipv6/uip-ds6.h"
 
 #include "simple-udp.h"
-#include "er-coap-13-engine.h"
+#include "er-coap-engine.h"
 
 #include <stdio.h>
 #include <string.h>
