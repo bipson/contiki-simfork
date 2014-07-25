@@ -56,6 +56,11 @@
 #include "powertrace.h"
 #endif
 
+#if UIP_MCAST6_CONF_ENGINE==UIP_MCAST6_ENGINE_SMRF || UIP_MCAST6_CONF_ENGINE==UIP_MCAST6_ENGINE_ROLL_TM
+#include "net/ipv6/multicast/uip-mcast6-engines.h"
+#include "net/ipv6/multicast/uip-mcast6.h"
+#endif
+
 #define DEBUG 1
 #if DEBUG
 #define PRINTF(...) printf(__VA_ARGS__)

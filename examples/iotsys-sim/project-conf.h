@@ -36,8 +36,15 @@
 
 #define REQUEST_SIZE            16
 
-/* enable iotsys mc-is-bc mechanism */
-#define IOTSYS_GC_FLOOD         1
+#if UIP_MCAST6_CONF_ENGINE==UIP_MCAST6_ENGINE_SMRF || UIP_MCAST6_CONF_ENGINE==UIP_MCAST6_ENGINE_ROLL_TM
+#undef UIP_CONF_IPV6_RPL
+#undef UIP_CONF_ND6_SEND_RA
+#undef UIP_CONF_ROUTER
+#define UIP_CONF_IPV6_RPL            1
+#define UIP_CONF_ND6_SEND_RA         0
+#define UIP_CONF_ROUTER              1
+#define UIP_MCAST6_ROUTE_CONF_ROUTES 1
+#endif
 
 /* Disabling RDC for demo purposes. Core updates often require more memory. */
 /* For projects, optimize memory and enable RDC again. */

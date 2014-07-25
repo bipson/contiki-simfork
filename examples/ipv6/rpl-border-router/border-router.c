@@ -54,6 +54,11 @@
 #define DEBUG DEBUG_NONE
 #include "net/ip/uip-debug.h"
 
+#if UIP_MCAST6_CONF_ENGINE==UIP_MCAST6_ENGINE_SMRF || UIP_MCAST6_CONF_ENGINE==UIP_MCAST6_ENGINE_ROLL_TM
+#include "net/ipv6/multicast/uip-mcast6-engines.h"
+#endif
+
+
 #if IOTSYS_GC_FLOOD
 uint16_t dag_id[] = {0x1111, 0x1100, 0, 0, 0, 0, 0, 0x0011};
 #endif
@@ -378,11 +383,13 @@ PROCESS_THREAD(border_router_process, ev, data)
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&et));
   }
 
+#if IOTSYS_GC_FLOOD
   dag = rpl_set_root(RPL_DEFAULT_INSTANCE,(uip_ip6addr_t *)dag_id);
   if(dag != NULL) {
     rpl_set_prefix(dag, &prefix, 64);
     PRINTF("created a new RPL dag\n");
   }
+#endif
 
   /* Now turn the radio on, but disable radio duty cycling.
    * Since we are the DAG root, reception delays would constrain mesh throughbut.

@@ -28,15 +28,21 @@
  *
  */
 
-/* enable iotsys mc-is-bc mechanism */
-#define IOTSYS_GC_FLOOD         1
-
-
 #ifndef PROJECT_ROUTER_CONF_H_
 #define PROJECT_ROUTER_CONF_H_
 
 #ifndef UIP_FALLBACK_INTERFACE
 #define UIP_FALLBACK_INTERFACE rpl_interface
+#endif
+
+#if UIP_MCAST6_CONF_ENGINE==UIP_MCAST6_ENGINE_SMRF || UIP_MCAST6_CONF_ENGINE==UIP_MCAST6_ENGINE_ROLL_TM
+#undef UIP_CONF_IPV6_RPL
+#undef UIP_CONF_ND6_SEND_RA
+#undef UIP_CONF_ROUTER
+#define UIP_CONF_IPV6_RPL            1
+#define UIP_CONF_ND6_SEND_RA         0
+#define UIP_CONF_ROUTER              1
+#define UIP_MCAST6_ROUTE_CONF_ROUTES 1
 #endif
 
 #ifndef QUEUEBUF_CONF_NUM

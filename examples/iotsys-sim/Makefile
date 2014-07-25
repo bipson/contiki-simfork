@@ -5,7 +5,10 @@ all: er-obix-gpost-server er-obix-server er-obix-group-uc-sender er-obix-request
 #PROJECT_SOURCEFILES += static-routing.c 
 
 #for powertrace
-WITH_POWERTRACE=1
+WITH_POWERTRACE=0
+
+# FLOOD, SMRF, MPL
+IOTSYS_MC_ENGINE=FLOOD
 
 # variable for Makefile.include
 WITH_UIP6=1
@@ -25,6 +28,21 @@ APPS += rest-engine
 ifeq ($(WITH_POWERTRACE), 1)
 CFLAGS += -DWITH_POWERTRACE=1
 APPS += powertrace
+endif
+
+ifeq ($(IOTSYS_MC_ENGINE), SMRF)
+MODULES += core/net/ipv6/multicast
+CFLAGS += -DUIP_MCAST6_CONF_ENGINE=UIP_MCAST6_ENGINE_SMRF
+CFLAGS += -DIOTSYS_GC_FLOOD=0
+endif
+ifeq ($(IOTSYS_MC_ENGINE), MPL)
+MODULES += core/net/ipv6/multicast
+CFLAGS += -DUIP_MCAST6_CONF_ENGINE=UIP_MCAST6_ENGINE_ROLL_TM
+CFLAGS += -DIOTSYS_GC_FLOOD=0
+endif
+ifeq ($(IOTSYS_MC_ENGINE), FLOOD)
+CFLAGS += -DUIP_MCAST6_CONF_ENGINE=UIP_MCAST6_ENGINE_NONE
+CFLAGS += -DIOTSYS_GC_FLOOD=1
 endif
 
 # optional rules to get assembly

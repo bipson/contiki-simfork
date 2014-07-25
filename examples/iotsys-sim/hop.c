@@ -47,6 +47,10 @@
 #include "powertrace.h"
 #endif
 
+#if UIP_MCAST6_CONF_ENGINE==UIP_MCAST6_ENGINE_SMRF || UIP_MCAST6_CONF_ENGINE==UIP_MCAST6_ENGINE_ROLL_TM
+#include "net/ipv6/multicast/uip-mcast6.h"
+#endif
+
 /*---------------------------------------------------------------------------*/
 PROCESS(no_process, "Empty process");
 AUTOSTART_PROCESSES(&no_process);
@@ -61,6 +65,15 @@ PROCESS_THREAD(no_process, ev, data)
   printf("... although I will still report my power consumption.\n");
   powertrace_start(CLOCK_SECOND * 10);
 #endif 
+
+#if UIP_MCAST6_CONF_ENGINE==UIP_MCAST6_ENGINE_SMRF || UIP_MCAST6_CONF_ENGINE==UIP_MCAST6_ENGINE_ROLL_TM
+  printf("... although I will act as multicast-router\n");
+#if !UIP_CONF_IPV6 || !UIP_CONF_ROUTER || !UIP_CONF_IPV6_MULTICAST || !UIP_CONF_IPV6_RPL
+#error "This example can not work with the current contiki configuration"
+#error "Check the values of: UIP_MCAST6_CONF_ENGINE, UIP_CONF_IPV6, UIP_CONF_ROUTER, UIP_CONF_IPV6_RPL"
+#endif
+
+#endif
   
   PROCESS_END();
 }

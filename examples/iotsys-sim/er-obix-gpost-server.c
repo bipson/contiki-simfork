@@ -49,8 +49,13 @@
 #include "powertrace.h"
 #endif
 
+#if UIP_MCAST6_CONF_ENGINE==UIP_MCAST6_ENGINE_SMRF || UIP_MCAST6_CONF_ENGINE==UIP_MCAST6_ENGINE_ROLL_TM
+#include "net/ipv6/multicast/uip-mcast6-engines.h"
+#include "net/ipv6/multicast/uip-mcast6.h"
+#endif
+
 /* Define which resources to include to meet memory constraints. */
-#define REST_RES_METER 1
+#define REST_RES_METER 0
 #define GROUP_COMM 1
 
 #include "rest-engine.h"
@@ -250,14 +255,28 @@ PROCESS_THREAD(rest_server_example, ev, data)
   coap_rest_implementation.set_group_comm_callback(group_comm_handler);
 
   /* statically joing group */
-  uip_ipaddr_t groupAddress;
+  uip_ipaddr_t addr;
+  uip_ds6_maddr_t *rv;
+
   int16_t groupIdentifier = 0;
 
-  uip_ip6addr(&groupAddress, 0xff15,0,0,0,0,0,0,((node_id / 6)+1));
-  uip_ds6_maddr_add(&groupAddress);
+#if UIP_MCAST6_CONF_ENGINE==UIP_MCAST6_ENGINE_SMRF || UIP_MCAST6_CONF_ENGINE==UIP_MCAST6_ENGINE_ROLL_TM
+  /* First, set our v6 global */
+  uip_ip6addr(&addr, 0xaaaa, 0, 0, 0, 0, 0, 0, 0);
+  uip_ds6_set_addr_iid(&addr, &uip_lladdr);
+  uip_ds6_addr_add(&addr, 0, ADDR_AUTOCONF);
+#endif
 
-  extract_group_identifier(&groupAddress, &groupIdentifier);
-  PRINT6ADDR(&groupAddress);
+  uip_ip6addr(&addr, 0xff15,0,0,0,0,0,0,((node_id / 6)+1));
+  rv = uip_ds6_maddr_add(&addr);
+
+  if(rv) {
+    PRINTF("Joined multicast group ");
+    PRINT6ADDR(&uip_ds6_maddr_lookup(&addr)->ipaddr);
+    PRINTF("\n");
+  }
+
+  extract_group_identifier(&addr, &groupIdentifier);
   PRINTF("\n group identifier: %d\n", groupIdentifier);
   join_group(groupIdentifier, &group_handler);
 #endif

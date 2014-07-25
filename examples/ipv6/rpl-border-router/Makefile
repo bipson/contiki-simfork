@@ -12,6 +12,24 @@ SMALL=1
 CFLAGS += -DPROJECT_CONF_H=\"project-conf.h\"
 PROJECT_SOURCEFILES += slip-bridge.c
 
+# FLOOD, SMRF, MPL
+IOTSYS_MC_ENGINE=FLOOD
+
+ifeq ($(IOTSYS_MC_ENGINE),SMRF)
+MODULES+=core/net/ipv6/multicast
+CFLAGS+=-DUIP_MCAST6_CONF_ENGINE=UIP_MCAST6_ENGINE_SMRF
+CFLAGS+=-DIOTSYS_GC_FLOOD=0
+endif
+ifeq ($(IOTSYS_MC_ENGINE),MPL)
+MODULES+=core/net/ipv6/multicast
+CFLAGS+=-DUIP_MCAST6_CONF_ENGINE=UIP_MCAST6_ENGINE_ROLL_TM
+CFLAGS+=-DIOTSYS_GC_FLOOD=0
+endif
+ifeq ($(IOTSYS_MC_ENGINE),FLOOD)
+CFLAGS+=-DUIP_MCAST6_CONF_ENGINE=UIP_MCAST6_ENGINE_NONE
+CFLAGS+=-DIOTSYS_GC_FLOOD=1
+endif
+
 #Simple built-in webserver is the default.
 #Override with make WITH_WEBSERVER=0 for no webserver.
 #WITH_WEBSERVER=webserver-name will use /apps/webserver-name if it can be
@@ -24,7 +42,7 @@ PROJECT_SOURCEFILES += slip-bridge.c
 #of the slip connection. Large MSS together with low baud rates without flow
 #control will overrun the transmit buffer when the style sheet is requested.
 
-WITH_WEBSERVER=1
+WITH_WEBSERVER=0
 ifeq ($(WITH_WEBSERVER),1)
 CFLAGS += -DWEBSERVER=1
 PROJECT_SOURCEFILES += httpd-simple.c
