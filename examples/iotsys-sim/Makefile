@@ -1,14 +1,15 @@
-all: er-obix-gpost-server er-obix-server er-obix-group-uc-sender er-obix-requester er-obix-group-mc-sender hop
-
+all: er-obix-gpost-server er-obix-group-mc-sender hop root
+       # er-obix-server er-obix-group-uc-sender er-obix-requester 
+ 
 # Use this target explicitly if requried: er-plugtest-server
 
 #PROJECT_SOURCEFILES += static-routing.c 
 
 #for powertrace
-WITH_POWERTRACE=0
+WITH_POWERTRACE=1
 
 # FLOOD, SMRF, MPL
-IOTSYS_MC_ENGINE=SMRF
+IOTSYS_MC_ENGINE=MPL
 
 # variable for Makefile.include
 WITH_UIP6=1

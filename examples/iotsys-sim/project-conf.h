@@ -34,7 +34,7 @@
 
 #define SICSLOWPAN_CONF_FRAG	1
 
-#define REQUEST_SIZE            16
+#define REQUEST_SIZE            32
 
 #if UIP_MCAST6_CONF_ENGINE==UIP_MCAST6_ENGINE_SMRF || UIP_MCAST6_CONF_ENGINE==UIP_MCAST6_ENGINE_ROLL_TM
 #undef UIP_CONF_IPV6_RPL
@@ -46,11 +46,14 @@
 #define UIP_MCAST6_ROUTE_CONF_ROUTES 1
 #endif
 
+/* trying to save space */
+#define UIP_CONF_TCP 0
+
 /* Disabling RDC for demo purposes. Core updates often require more memory. */
 /* For projects, optimize memory and enable RDC again. */
 #undef NETSTACK_CONF_RDC
-//#define NETSTACK_CONF_RDC     nullrdc_driver
-#define NETSTACK_CONF_RDC     contikimac_driver
+#define NETSTACK_CONF_RDC     nullrdc_driver
+//#define NETSTACK_CONF_RDC     contikimac_driver
 
 #undef NETSTACK_CONF_MAC
 #define NETSTACK_CONF_MAC     csma_driver

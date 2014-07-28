@@ -60,7 +60,7 @@
 
 #include "rest-engine.h"
 
-#define DEBUG 1
+#define DEBUG 0
 #if DEBUG
 #define PRINTF(...) printf(__VA_ARGS__)
 #define PRINT6ADDR(addr) PRINTF("[%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x]", ((uint8_t *)addr)[0], ((uint8_t *)addr)[1], ((uint8_t *)addr)[2], ((uint8_t *)addr)[3], ((uint8_t *)addr)[4], ((uint8_t *)addr)[5], ((uint8_t *)addr)[6], ((uint8_t *)addr)[7], ((uint8_t *)addr)[8], ((uint8_t *)addr)[9], ((uint8_t *)addr)[10], ((uint8_t *)addr)[11], ((uint8_t *)addr)[12], ((uint8_t *)addr)[13], ((uint8_t *)addr)[14], ((uint8_t *)addr)[15])
@@ -71,9 +71,9 @@
 #define PRINTLLADDR(addr)
 #endif
 
-#define CHUNKS_TOTAL    1024
+//#define CHUNKS_TOTAL    1024
 //#define CHUNKS_TOTAL    4096
-//#define CHUNKS_TOTAL    8
+#define CHUNKS_TOTAL    1
 // Group communication definition
 #define MAX_GC_HANDLERS 1
 #define MAX_GC_GROUPS 1
@@ -106,6 +106,7 @@ gc_handler_t gc_handlers[MAX_GC_GROUPS];
 /* helper functions */
 /********************/
 #if GROUP_COMM
+#if 0
 void
 extract_group_identifier(uip_ip6addr_t* ipv6Address, uint16_t* groupIdentifier )
 { 
@@ -114,6 +115,7 @@ extract_group_identifier(uip_ip6addr_t* ipv6Address, uint16_t* groupIdentifier )
   *groupIdentifier <<= 8; 
   *groupIdentifier += ((uint8_t *)ipv6Address)[15]; 
 } 
+#endif 
 
 void
 join_group(int groupIdentifier, gc_handler handler  )
@@ -179,11 +181,11 @@ void group_handler(char *payload)
 
   if (strncmp(payload, msg, REQUEST_SIZE) == 0)
   {
-    printf("OK, received message\n");
+    printf("OK\n");
   }
   else
   {
-    printf("ERROR, payload does not match!\n");
+    printf("ERR\n");
   }
 }
 #if GROUP_COMM
@@ -258,7 +260,7 @@ PROCESS_THREAD(rest_server_example, ev, data)
   uip_ipaddr_t addr;
   uip_ds6_maddr_t *rv;
 
-  int16_t groupIdentifier = 0;
+  int16_t groupIdentifier = 1;
 
 #if 0
 //#if UIP_MCAST6_CONF_ENGINE==UIP_MCAST6_ENGINE_SMRF || UIP_MCAST6_CONF_ENGINE==UIP_MCAST6_ENGINE_ROLL_TM
@@ -276,9 +278,11 @@ PROCESS_THREAD(rest_server_example, ev, data)
     PRINT6ADDR(&uip_ds6_maddr_lookup(&addr)->ipaddr);
     PRINTF("\n");
   }
-
+  
+  /*
   extract_group_identifier(&addr, &groupIdentifier);
   PRINTF("\n group identifier: %d\n", groupIdentifier);
+  */
   join_group(groupIdentifier, &group_handler);
 #endif
 

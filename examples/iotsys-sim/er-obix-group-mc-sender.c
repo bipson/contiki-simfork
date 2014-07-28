@@ -47,8 +47,6 @@
 
 #include "node-id.h"
 
-#include "dev/button-sensor.h"
-
 #include "er-coap-engine.h"
 
 #if WITH_POWERTRACE
@@ -61,7 +59,7 @@
 #include "net/ipv6/multicast/uip-mcast6.h"
 #endif
 
-#define DEBUG 1
+#define DEBUG 0
 #if DEBUG
 #define PRINTF(...) printf(__VA_ARGS__)
 #define PRINT6ADDR(addr) PRINTF("[%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x]", ((uint8_t *)addr)[0], ((uint8_t *)addr)[1], ((uint8_t *)addr)[2], ((uint8_t *)addr)[3], ((uint8_t *)addr)[4], ((uint8_t *)addr)[5], ((uint8_t *)addr)[6], ((uint8_t *)addr)[7], ((uint8_t *)addr)[8], ((uint8_t *)addr)[9], ((uint8_t *)addr)[10], ((uint8_t *)addr)[11], ((uint8_t *)addr)[12], ((uint8_t *)addr)[13], ((uint8_t *)addr)[14], ((uint8_t *)addr)[15])
@@ -82,7 +80,7 @@
 /* continuous requests or limited to 10 requests */
 #define CONTINUOUS 1
 
-PROCESS(coap_client_example, "Loop");
+PROCESS(coap_client_example, "S");
 AUTOSTART_PROCESSES(&coap_client_example);
 
 uip_ipaddr_t group_ipaddr;
@@ -93,7 +91,7 @@ PROCESS_THREAD(coap_client_example, ev, data)
 {
   PROCESS_BEGIN();
   coap_packet_t request[1];
-  static struct uip_udp_conn * mcast_conn;
+  struct uip_udp_conn * mcast_conn;
 
 #if CONTINUOUS == 0
   static int count = 0;
@@ -115,7 +113,7 @@ PROCESS_THREAD(coap_client_example, ev, data)
   /* receives all CoAP messages */
   coap_init_engine();
 
-  SENSORS_ACTIVATE(button_sensor);
+  //SENSORS_ACTIVATE(button_sensor);
 
 #if WITH_POWERTRACE
   powertrace_start(CLOCK_SECOND * 10);
@@ -123,30 +121,27 @@ PROCESS_THREAD(coap_client_example, ev, data)
 
   /* delay the toggle timer for some time, so it does not always coincide with
    * the timer for powertrace */
-  clock_wait((TOGGLE_INTERVAL / 2) * CLOCK_SECOND);
-  etimer_set(&et, TOGGLE_INTERVAL * CLOCK_SECOND);
+  /* ... and increase, so that rpl-dodag is built when we start */
+  etimer_set(&et, TOGGLE_INTERVAL * 1.5 * CLOCK_SECOND);
 
   while(1) {
     PROCESS_YIELD();
 
-    if (etimer_expired(&et)) 
-    {
-      // timer is always running and resetting, we just hook in
-      if (active)
-      {
+    if (etimer_expired(&et)) {
+      if (active) {
         PRINTF("--Toggle timer--\n");
 
         /* prepare request, TID is set by COAP_BLOCKING_REQUEST() */
         coap_init_message(request, COAP_TYPE_NON, COAP_PUT, 0 );
         coap_set_header_uri_path(request, "");
 
-        char *msg = "aaaabbbbccccddddeeeeffffgggghhhhaaaabbbbccccddddeeeeffffgggghhhh";
+        char *msg = "aaaabbbbccccddddeeeeffffgggghhhh";
         coap_set_payload(request, (uint8_t *) msg, REQUEST_SIZE);
 
         PRINT6ADDR(&group_ipaddr);
         PRINTF(" : %u\n", UIP_HTONS(REMOTE_PORT));
 
-        PRINTF("Sending request\n");
+        printf("Sent\n");
         coap_simple_request(&group_ipaddr, COAP_DEFAULT_PORT, request);
         //uip_udp_packet_send(mcast_conn, request, sizeof(request));
 
@@ -154,23 +149,17 @@ PROCESS_THREAD(coap_client_example, ev, data)
         count++;
         if (count >= 10)
         {
-          printf("LAST!\n");
+          printf("End\n");
           active = 0;
         }
 #endif /* CONTINUOUS */
 
         PRINTF("--Done--\n");
-      }
-      etimer_reset(&et);
-    }
-
-    if (ev == sensors_event && data == &button_sensor)
-    {
-      printf("starting!\n");
-#if CONTINUOUS == 0
-      count = 0;
-#endif /* CONTINUOUS */
-      active = 1;
+        etimer_reset(&et);
+      } else {
+        active = 1;
+        etimer_set(&et, TOGGLE_INTERVAL * CLOCK_SECOND);
+      } 
     }
   }
 
