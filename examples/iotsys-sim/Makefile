@@ -8,7 +8,7 @@ all: er-obix-gpost-server er-obix-server er-obix-group-uc-sender er-obix-request
 WITH_POWERTRACE=0
 
 # FLOOD, SMRF, MPL
-IOTSYS_MC_ENGINE=FLOOD
+IOTSYS_MC_ENGINE=SMRF
 
 # variable for Makefile.include
 WITH_UIP6=1

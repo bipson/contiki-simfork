@@ -73,7 +73,7 @@
 #endif
 
 /* TODO: This server address is hard-coded for Cooja. */
-#define GROUP_ADDR(ipaddr)   uip_ip6addr(ipaddr, 0xff15, 0, 0, 0, 0, 0, 0, (node_id / 6)) /* cooja2 */
+#define GROUP_ADDR(ipaddr)   uip_ip6addr(ipaddr, 0xff1e, 0, 0, 0, 0, 0, 0, (node_id / 6)) /* cooja2 */
 
 #define LOCAL_PORT      UIP_HTONS(COAP_DEFAULT_PORT+1)
 #define REMOTE_PORT     UIP_HTONS(COAP_DEFAULT_PORT)
@@ -93,6 +93,7 @@ PROCESS_THREAD(coap_client_example, ev, data)
 {
   PROCESS_BEGIN();
   coap_packet_t request[1];
+  static struct uip_udp_conn * mcast_conn;
 
 #if CONTINUOUS == 0
   static int count = 0;
@@ -100,19 +101,19 @@ PROCESS_THREAD(coap_client_example, ev, data)
   static int active = 0;
 
   GROUP_ADDR(&group_ipaddr);
+  /*
   maddr = uip_ds6_maddr_add(&group_ipaddr);
-  if(maddr == NULL)
-  {
-    PRINTF("NULL returned.");
+  if(maddr) {
+    PRINTF("Joined multicast group ");
+    PRINT6ADDR(&uip_ds6_maddr_lookup(&group_ipaddr)->ipaddr);
+    PRINTF("\n");
   }
-  else
-  {
-    PRINTF("Is used: %d", maddr->isused);
-    PRINT6ADDR(&(maddr->ipaddr));
-  }
+  */
+
+  // mcast_conn = udp_new(&group_ipaddr, UIP_HTONS(MCAST_SINK_UDP_PORT), NULL);
 
   /* receives all CoAP messages */
-  // coap_receiver_init();
+  coap_init_engine();
 
   SENSORS_ACTIVATE(button_sensor);
 
@@ -147,6 +148,7 @@ PROCESS_THREAD(coap_client_example, ev, data)
 
         PRINTF("Sending request\n");
         coap_simple_request(&group_ipaddr, COAP_DEFAULT_PORT, request);
+        //uip_udp_packet_send(mcast_conn, request, sizeof(request));
 
 #if CONTINUOUS == 0
         count++;

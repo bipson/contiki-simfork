@@ -260,14 +260,15 @@ PROCESS_THREAD(rest_server_example, ev, data)
 
   int16_t groupIdentifier = 0;
 
-#if UIP_MCAST6_CONF_ENGINE==UIP_MCAST6_ENGINE_SMRF || UIP_MCAST6_CONF_ENGINE==UIP_MCAST6_ENGINE_ROLL_TM
+#if 0
+//#if UIP_MCAST6_CONF_ENGINE==UIP_MCAST6_ENGINE_SMRF || UIP_MCAST6_CONF_ENGINE==UIP_MCAST6_ENGINE_ROLL_TM
   /* First, set our v6 global */
   uip_ip6addr(&addr, 0xaaaa, 0, 0, 0, 0, 0, 0, 0);
   uip_ds6_set_addr_iid(&addr, &uip_lladdr);
   uip_ds6_addr_add(&addr, 0, ADDR_AUTOCONF);
 #endif
 
-  uip_ip6addr(&addr, 0xff15,0,0,0,0,0,0,((node_id / 6)+1));
+  uip_ip6addr(&addr, 0xff1e,0,0,0,0,0,0,((node_id / 6)+1));
   rv = uip_ds6_maddr_add(&addr);
 
   if(rv) {

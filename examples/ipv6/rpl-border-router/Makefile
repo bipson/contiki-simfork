@@ -13,7 +13,7 @@ CFLAGS += -DPROJECT_CONF_H=\"project-conf.h\"
 PROJECT_SOURCEFILES += slip-bridge.c
 
 # FLOOD, SMRF, MPL
-IOTSYS_MC_ENGINE=FLOOD
+IOTSYS_MC_ENGINE=SMRF
 
 ifeq ($(IOTSYS_MC_ENGINE),SMRF)
 MODULES+=core/net/ipv6/multicast
