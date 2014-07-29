@@ -106,7 +106,6 @@ gc_handler_t gc_handlers[MAX_GC_GROUPS];
 /* helper functions */
 /********************/
 #if GROUP_COMM
-#if 0
 void
 extract_group_identifier(uip_ip6addr_t* ipv6Address, uint16_t* groupIdentifier )
 { 
@@ -115,7 +114,6 @@ extract_group_identifier(uip_ip6addr_t* ipv6Address, uint16_t* groupIdentifier )
   *groupIdentifier <<= 8; 
   *groupIdentifier += ((uint8_t *)ipv6Address)[15]; 
 } 
-#endif 
 
 void
 join_group(int groupIdentifier, gc_handler handler  )
@@ -260,7 +258,7 @@ PROCESS_THREAD(rest_server_example, ev, data)
   uip_ipaddr_t addr;
   uip_ds6_maddr_t *rv;
 
-  int16_t groupIdentifier = 1;
+  int16_t groupIdentifier;
 
 #if 0
 //#if UIP_MCAST6_CONF_ENGINE==UIP_MCAST6_ENGINE_SMRF || UIP_MCAST6_CONF_ENGINE==UIP_MCAST6_ENGINE_ROLL_TM
@@ -279,10 +277,8 @@ PROCESS_THREAD(rest_server_example, ev, data)
     PRINTF("\n");
   }
   
-  /*
   extract_group_identifier(&addr, &groupIdentifier);
   PRINTF("\n group identifier: %d\n", groupIdentifier);
-  */
   join_group(groupIdentifier, &group_handler);
 #endif
 

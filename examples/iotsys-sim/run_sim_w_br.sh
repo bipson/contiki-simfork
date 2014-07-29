@@ -2,7 +2,7 @@
 
 ##
 # run_sim.sh
-# Date: 2014-07-29
+# Date: 2014-05-12
 # Author: Philipp Raich
 # Description: Repeat a given cooja simulation n times (default "5") and
 # write radio-log and testlog-output into:
@@ -48,8 +48,20 @@ for i in `seq 1 $iterations`; do
   java -mx512m -jar ../../tools/cooja/dist/cooja.jar -nogui="$sim_file" -contiki='../..' &
   pid1=$!
 
+  # start border-router
+  while [ $router_success = 0 ]; do
+    sudo ./connect-router-cooja.sh &
+    pid2=$!
+    sleep 1
+    running=`ps -p $pid2 --no-headers | wc -l`
+    if [ $running != 0 ]; then
+      router_success=1
+    fi
+  done
+
   # wait for end of sim
   wait
+  router_success=0
   
   # move/rename output  
   separator='_'
@@ -62,7 +74,7 @@ for i in `seq 1 $iterations`; do
     mkdir -p "$filedir"
   fi
 
-  # mv "COOJA.radiolog" "$filedir/pdump_$output_postfix.txt"
+  mv "COOJA.radiolog" "$filedir/pdump_$output_postfix.txt"
   mv "COOJA.testlog" "$filedir/powertrace_$output_postfix.txt"
   
 done

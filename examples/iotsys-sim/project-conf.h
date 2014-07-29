@@ -37,6 +37,7 @@
 #define REQUEST_SIZE            32
 
 #if UIP_MCAST6_CONF_ENGINE==UIP_MCAST6_ENGINE_SMRF || UIP_MCAST6_CONF_ENGINE==UIP_MCAST6_ENGINE_ROLL_TM
+/* For Imin: Use 16 over NullRDC, 64 over Contiki MAC */
 #undef UIP_CONF_IPV6_RPL
 #undef UIP_CONF_ND6_SEND_RA
 #undef UIP_CONF_ROUTER
@@ -44,6 +45,7 @@
 #define UIP_CONF_ND6_SEND_RA         0
 #define UIP_CONF_ROUTER              1
 #define UIP_MCAST6_ROUTE_CONF_ROUTES 1
+#define ROLL_TM_CONF_IMIN_1          16
 #endif
 
 /* trying to save space */

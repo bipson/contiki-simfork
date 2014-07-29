@@ -78,7 +78,7 @@
 
 #define TOGGLE_INTERVAL 10
 /* continuous requests or limited to 10 requests */
-#define CONTINUOUS 1
+#define CONTINUOUS 0
 
 PROCESS(coap_client_example, "S");
 AUTOSTART_PROCESSES(&coap_client_example);
@@ -147,10 +147,11 @@ PROCESS_THREAD(coap_client_example, ev, data)
 
 #if CONTINUOUS == 0
         count++;
-        if (count >= 10)
+        if (count >= 50)
         {
           printf("End\n");
           active = 0;
+          break;
         }
 #endif /* CONTINUOUS */
 
@@ -163,5 +164,5 @@ PROCESS_THREAD(coap_client_example, ev, data)
     }
   }
 
-  PROCESS_END();
+PROCESS_END();
 }
