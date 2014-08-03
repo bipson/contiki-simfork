@@ -1,42 +1,42 @@
 /*
- * Copyright (c) 2011, Matthias Kovatsch and other contributors.
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- * 3. Neither the name of the Institute nor the names of its contributors
- *    may be used to endorse or promote products derived from this software
- *    without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE INSTITUTE AND CONTRIBUTORS ``AS IS'' AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED.  IN NO EVENT SHALL THE INSTITUTE OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
- * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
- * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
- * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
- * SUCH DAMAGE.
- *
- * This file is part of the Contiki operating system.
- */
+* Copyright (c) 2011, Matthias Kovatsch and other contributors.
+* All rights reserved.
+*
+* Redistribution and use in source and binary forms, with or without
+* modification, are permitted provided that the following conditions
+* are met:
+* 1. Redistributions of source code must retain the above copyright
+*    notice, this list of conditions and the following disclaimer.
+* 2. Redistributions in binary form must reproduce the above copyright
+*    notice, this list of conditions and the following disclaimer in the
+*    documentation and/or other materials provided with the distribution.
+* 3. Neither the name of the Institute nor the names of its contributors
+*    may be used to endorse or promote products derived from this software
+*    without specific prior written permission.
+*
+* THIS SOFTWARE IS PROVIDED BY THE INSTITUTE AND CONTRIBUTORS ``AS IS'' AND
+* ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+* IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+* ARE DISCLAIMED.  IN NO EVENT SHALL THE INSTITUTE OR CONTRIBUTORS BE LIABLE
+* FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+* DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+* OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+* HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+* LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+* OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+* SUCH DAMAGE.
+*
+* This file is part of the Contiki operating system.
+*/
 
 /**
- * \file
- *      Erbium (Er) CoAP client example
- * \author
- *      Philipp Raich <philipp.raich@student.tuwien.ac.at>
- *      based mostly on COAP-client written by:
- *      Matthias Kovatsch <kovatsch@inf.ethz.ch>
- */
+* \file
+*      Erbium (Er) CoAP client example
+* \author
+*      Philipp Raich <philipp.raich@student.tuwien.ac.at>
+*      based mostly on COAP-client written by:
+*      Matthias Kovatsch <kovatsch@inf.ethz.ch>
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -48,8 +48,6 @@
 #include "node-id.h"
 
 #include "er-coap-engine.h"
-
-#include "dev/button-sensor.h"
 
 #if WITH_POWERTRACE
 #warning "Compiling with powertrace!"
@@ -78,11 +76,16 @@
 /* continuous requests or limited to 10 requests */
 #define CONTINUOUS 1
 
-PROCESS(coap_client_example, "Loop");
+PROCESS(coap_client_example, "S");
 AUTOSTART_PROCESSES(&coap_client_example);
 
-static uip_ipaddr_t server_ipaddr;
+/* processes for blocking call */
+PROCESS(request, "R");
+
+uip_ipaddr_t server_ipaddr;
 static struct etimer et;
+
+char *msg = "aaaabbbbccccddddeeeeffffgggghhhh";
 
 /* leading and ending slashes only for demo purposes, get cropped automatically when setting the Uri-Path */
 char* service_url = "h";
@@ -106,21 +109,45 @@ client_chunk_handler(void *response)
 #endif /* 0 */
 }
 
+#define COAP_WRAPPER(i) \
+{ \
+  coap_packet_t request[1]; \
+  coap_init_message(request, COAP_TYPE_CON, COAP_PUT, 0); \
+  coap_set_header_uri_path(request, service_url); \
+  coap_set_payload(request, (uint8_t *) msg, REQUEST_SIZE); \
+  SERVER_NODE(&server_ipaddr, i); \
+  PRINT6ADDR(&server_ipaddr); \
+  PRINTF(" : %u\n", UIP_HTONS(REMOTE_PORT)); \
+  COAP_BLOCKING_REQUEST(&server_ipaddr, REMOTE_PORT, request, client_chunk_handler); \
+}
+
+PROCESS_THREAD(request, ev, data)
+{
+  PROCESS_BEGIN();
+  static int i = 0;
+
+  for(i = 0; i < 4; i++)
+  {
+    int target = node_id - (i + 1);
+    PRINTF("sending to: %u\n", target);
+
+    COAP_WRAPPER(target);
+  }
+
+  PROCESS_END();
+}
+
 PROCESS_THREAD(coap_client_example, ev, data)
 {
   PROCESS_BEGIN();
-  coap_packet_t request[1];
 
 #if CONTINUOUS == 0
   static int count = 0;
 #endif /* CONTINUOUS */
   static int active = 0;
-  static int i = 0;
 
   /* receives all CoAP messages */
   coap_init_engine();
-
-  SENSORS_ACTIVATE(button_sensor);
 
 #if WITH_POWERTRACE
   powertrace_start(CLOCK_SECOND * 10);
@@ -128,8 +155,7 @@ PROCESS_THREAD(coap_client_example, ev, data)
 
   /* delay the toggle timer for some time, so it does not always coincide with
    * the timer for powertrace */
-  clock_wait((TOGGLE_INTERVAL / 2) * CLOCK_SECOND);
-  etimer_set(&et, TOGGLE_INTERVAL * CLOCK_SECOND);
+  etimer_set(&et, TOGGLE_INTERVAL * 1.5 * CLOCK_SECOND);
 
   while(1) {
     PROCESS_YIELD();
@@ -141,45 +167,26 @@ PROCESS_THREAD(coap_client_example, ev, data)
       {
         PRINTF("--Toggle timer--\n");
 
-        for(i = 0; i < 4; i++)
-        {
-          /* prepare request, TID is set by COAP_BLOCKING_REQUEST() */
-          coap_init_message(request, COAP_TYPE_CON, COAP_PUT, 0);
-          coap_set_header_uri_path(request, service_url);
-
-          char *msg = "aaaabbbbccccdddd";
-          coap_set_payload(request, (uint8_t *) msg, REQUEST_SIZE);
-
-          SERVER_NODE(&server_ipaddr, i+2+(node_id - 6));
-          PRINT6ADDR(&server_ipaddr);
-          PRINTF(" : %u\n", UIP_HTONS(REMOTE_PORT));
-
-          PRINTF("Sending request\n");
-          //coap_simple_request(&server_ipaddr[i], COAP_DEFAULT_PORT, &request[i]);
-          COAP_BLOCKING_REQUEST(&server_ipaddr, REMOTE_PORT, request, client_chunk_handler);
-        }
+        process_exit(&request);
+        printf("Sent\n");
+        process_start(&request, NULL);
 
 #if CONTINUOUS == 0
         count++;
-        if (count >= 10)
+        if (count >= 50)
         {
-          printf("LAST!\n");
+          printf("End\n");
           active = 0;
+          break;
         }
 #endif /* CONTINUOUS */
 
         PRINTF("--Done--\n");
+        etimer_reset(&et);
+      } else {
+        active = 1;
+        etimer_set(&et, TOGGLE_INTERVAL * CLOCK_SECOND);
       }
-      etimer_reset(&et);
-    }
-
-    if (ev == sensors_event && data == &button_sensor)
-    {
-      printf("starting!\n");
-#if CONTINUOUS == 0
-      count = 0;
-#endif /* CONTINUOUS */
-      active = 1;
     }
   }
 
